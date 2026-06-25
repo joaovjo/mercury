@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn OpenCode Skills — Architecture</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0f;
+            color: #e4e4e7;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #0077b5, #00a0dc, #6dd5ed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #71717a;
+            font-size: 1rem;
+            margin-bottom: 60px;
+        }
+
+        .diagram {
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: auto auto auto auto;
+            gap: 30px;
+            align-items: start;
+        }
+
+        /* User node at top center */
+        .node-user {
+            grid-column: 2;
+            grid-row: 1;
+            justify-self: center;
+        }
+
+        /* MCP layer */
+        .node-linkedin-mcp {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .node-playwright-mcp {
+            grid-column: 3;
+            grid-row: 2;
+        }
+
+        .node-agent {
+            grid-column: 2;
+            grid-row: 2;
+        }
+
+        /* Skills layer */
+        .node-optimizer {
+            grid-column: 1;
+            grid-row: 3;
+        }
+
+        .node-scout {
+            grid-column: 2;
+            grid-row: 3;
+        }
+
+        .node-outreach {
+            grid-column: 3;
+            grid-row: 3;
+        }
+
+        /* Outcomes layer */
+        .node-outcomes {
+            grid-column: 1 / -1;
+            grid-row: 4;
+        }
+
+        .node {
+            border-radius: 16px;
+            padding: 24px;
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .node:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 119, 181, 0.15);
+        }
+
+        .node-title {
+            font-weight: 700;
+            font-size: 1.05rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .node-desc {
+            font-size: 0.85rem;
+            color: #a1a1aa;
+            line-height: 1.5;
+        }
+
+        .node-list {
+            list-style: none;
+            margin-top: 10px;
+            font-size: 0.82rem;
+            color: #a1a1aa;
+        }
+
+        .node-list li {
+            padding: 3px 0;
+            padding-left: 16px;
+            position: relative;
+        }
+
+        .node-list li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: #0077b5;
+        }
+
+        /* Styles per type */
+        .type-user {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 1px solid #0077b5;
+            text-align: center;
+        }
+
+        .type-user .node-title { justify-content: center; }
+
+        .type-mcp {
+            background: linear-gradient(135deg, #1a1a2e, #0f172a);
+            border: 1px solid #334155;
+        }
+
+        .type-agent {
+            background: linear-gradient(135deg, #1e1b4b, #312e81);
+            border: 1px solid #6366f1;
+        }
+
+        .type-skill {
+            background: linear-gradient(135deg, #052e16, #14532d);
+            border: 1px solid #22c55e;
+        }
+
+        .type-outcome {
+            background: linear-gradient(135deg, #1c1917, #292524);
+            border: 1px solid #f59e0b;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: auto;
+        }
+
+        .badge-mcp { background: #1e293b; color: #94a3b8; }
+        .badge-skill { background: #052e16; color: #4ade80; }
+        .badge-core { background: #312e81; color: #a5b4fc; }
+
+        /* Flow arrows (CSS-only) */
+        .flow-section {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #52525b;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .flow-arrow::before,
+        .flow-arrow::after {
+            content: '';
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #52525b, transparent);
+        }
+
+        .arrow-down {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #52525b;
+            font-size: 1.2rem;
+            padding: 4px 0;
+        }
+
+        /* Outcomes grid */
+        .outcomes-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .outcome-item {
+            background: #1c1917;
+            border: 1px solid #44403c;
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .outcome-icon {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .outcome-label {
+            font-size: 0.8rem;
+            color: #a1a1aa;
+            line-height: 1.4;
+        }
+
+        .outcome-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #e4e4e7;
+            margin-top: 4px;
+        }
+
+        /* Connector lines via SVG */
+        .connectors {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .diagram > .node {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Section labels */
+        .section-label {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 0 0 4px 0;
+        }
+
+        .section-label span {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: #52525b;
+            white-space: nowrap;
+        }
+
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #27272a;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .diagram {
+                grid-template-columns: 1fr;
+            }
+            .node-user, .node-linkedin-mcp, .node-playwright-mcp,
+            .node-agent, .node-optimizer, .node-scout, .node-outreach, .node-outcomes {
+                grid-column: 1;
+                grid-row: auto;
+            }
+            .outcomes-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .section-label { grid-column: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LinkedIn OpenCode Skills</h1>
+        <p class="subtitle">AI-powered LinkedIn profile optimization, job scouting, and recruiter outreach</p>
+
+        <div class="diagram">
+            <!-- Row 1: User -->
+            <div class="section-label"><span>Interface</span></div>
+            
+            <div class="node type-user node-user">
+                <div class="node-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0077b5" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>
+                    You (OpenCode CLI)
+                </div>
+                <div class="node-desc">Natural language requests about LinkedIn profile, jobs, or recruiters</div>
+            </div>
+
+            <!-- Row 2: Agent + MCP -->
+            <div class="section-label"><span>Infrastructure</span></div>
+
+            <div class="node type-mcp node-linkedin-mcp">
+                <div class="node-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#0077b5"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                    LinkedIn MCP
+                    <span class="badge badge-mcp">MCP Server</span>
+                </div>
+                <ul class="node-list">
+                    <li>Read profiles & analytics</li>
+                    <li>Search jobs (filters, pagination)</li>
+                    <li>Search people (URN filtering)</li>
+                    <li>Send connection requests</li>
+                    <li>Get job details & company info</li>
+                </ul>
+            </div>
+
+            <div class="node type-agent node-agent">
+                <div class="node-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 9h6M9 13h4M9 17h5"/></svg>
+                    OpenCode Agent
+                    <span class="badge badge-core">Core</span>
+                </div>
+                <div class="node-desc">Orchestrates skills, calls MCPs, manages Playwright sessions, reasons about fit</div>
+                <ul class="node-list">
+                    <li>Loads skills by intent match</li>
+                    <li>Audits profile signals</li>
+                    <li>Ranks jobs by fit</li>
+                    <li>Drafts personalized messages</li>
+                </ul>
+            </div>
+
+            <div class="node type-mcp node-playwright-mcp">
+                <div class="node-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                    Playwright MCP
+                    <span class="badge badge-mcp">MCP Server</span>
+                </div>
+                <ul class="node-list">
+                    <li>CDP connection (port 9222)</li>
+                    <li>Navigate LinkedIn edit forms</li>
+                    <li>Fill fields, select options</li>
+                    <li>Screenshot verification</li>
+                    <li>Typeahead + keyboard nav</li>
+                </ul>
+            </div>
+
+            <!-- Row 3: Skills -->
+            <div class="section-label"><span>Skills (loaded on demand)</span></div>
+
+            <div class="node type-skill node-optimizer">
+                <div class="node-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2"><path d="M12 20V10M6 20V4M18 20v-6"/></svg>
+                    Profile Optimizer
+                    <span class="badge badge-skill">Skill</span>
+                </div>
+                <ul class="node-list">
+                    <li>Open to Work (recruiter-only)</li>
+                    <li>Headline keywords</li>
+                    <li>Location correction</li>
+                    <li>Top Skills re-pin (5)</li>
+                    <li>Languages section</li>
+                    <li>About rewrite</li>
+                    <li>Projects & Experience</li>
+                    <li>Remove internal-mobility</li>
+                </ul>
+            </div>
+
+            <div class="node type-skill node-scout">
+                <div class="node-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+                    Job Scout
+                    <span class="badge badge-skill">Skill</span>
+                </div>
+                <ul class="node-list">
+                    <li>Multi-company parallel search</li>
+                    <li>Full job detail extraction</li>
+                    <li>Fit assessment (Strong/Good/Stretch)</li>
+                    <li>Compensation reality check</li>
+                    <li>Diversity-scope flagging</li>
+                    <li>ATS friction warnings</li>
+                </ul>
+            </div>
+
+            <div class="node type-skill node-outreach">
+                <div class="node-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
+                    Recruiter Outreach
+                    <span class="badge badge-skill">Skill</span>
+                </div>
+                <ul class="node-list">
+                    <li>Company URN ID lookup</li>
+                    <li>Recruiter search + prioritization</li>
+                    <li>Tailored note generation (&lt;300 chars)</li>
+                    <li>Batch connection requests</li>
+                    <li>Follow-up templates</li>
+                    <li>Rate-limit awareness</li>
+                </ul>
+            </div>
+
+            <!-- Row 4: Outcomes -->
+            <div class="section-label"><span>Outcomes</span></div>
+
+            <div class="node type-outcome node-outcomes">
+                <div class="node-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    Results
+                </div>
+                <div class="outcomes-grid">
+                    <div class="outcome-item">
+                        <div class="outcome-icon">🔍</div>
+                        <div class="outcome-label">Search Appearances</div>
+                        <div class="outcome-value">61 → 200+/week</div>
+                    </div>
+                    <div class="outcome-item">
+                        <div class="outcome-icon">📋</div>
+                        <div class="outcome-label">Matched Roles</div>
+                        <div class="outcome-value">20+ shortlisted</div>
+                    </div>
+                    <div class="outcome-item">
+                        <div class="outcome-icon">🤝</div>
+                        <div class="outcome-label">Recruiter Contacts</div>
+                        <div class="outcome-value">5 targeted sends</div>
+                    </div>
+                    <div class="outcome-item">
+                        <div class="outcome-icon">⚡</div>
+                        <div class="outcome-label">Time to Complete</div>
+                        <div class="outcome-value">~1 session</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
