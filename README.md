@@ -9,7 +9,8 @@ AI agent skills that audit, optimize, and automate LinkedIn profile management, 
 | **linkedin-profile-optimizer** | Audits your profile against recruiter-search signals and fixes gaps via Playwright (Open to Work, headline, location, skills, languages, projects, About, experience) |
 | **linkedin-job-scout** | Searches LinkedIn Jobs by company/location/work-type, pulls full details, and presents a prioritized shortlist with fit assessment |
 | **linkedin-recruiter-outreach** | Finds technical recruiters at target companies, prioritizes by proximity/mutuals, and sends tailored connection requests |
-| **auto-clipboard** | Automatically copies actionable output (commands, messages, templates) to your clipboard without being asked |
+
+See [`diagram.html`](diagram.html) for a visual of how the skills work together.
 
 ## Requirements
 
@@ -100,8 +101,6 @@ The agent loads these skills automatically when your request matches their descr
 
 ```
 skills/
-├── auto-clipboard/
-│   └── SKILL.md
 ├── linkedin-job-scout/
 │   └── SKILL.md
 ├── linkedin-profile-optimizer/
@@ -112,4 +111,4 @@ skills/
 
 ## License
 
-MIT — do whatever you want with it.
+The Unlicense — public domain. Do whatever you want with it.
