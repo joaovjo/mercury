@@ -32,8 +32,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     deterministic, unit-tested mapper from live ATS form labels to stored
     `applicant_answers` (exact → synonym → fuzzy with Levenshtein/token overlap).
     Returns a `{matched, unfilled}` plan; EEO fields and fields with no stored
-    answer are surfaced in `unfilled`, never guessed. 11 `bun test` cases cover
-    the guardrails. The skill now calls it instead of eyeballing labels.
+    answer are surfaced in `unfilled`, never guessed. Candidates rank by match
+    tier then synonym specificity so a strong multi-word phrase isn't derailed by
+    an incidental single-word collision (validated against a live GitLab
+    Greenhouse form). 14 `bun test` cases cover the guardrails. The skill now
+    calls it instead of eyeballing labels.
 
 
 

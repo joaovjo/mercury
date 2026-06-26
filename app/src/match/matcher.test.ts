@@ -92,4 +92,35 @@ describe("matchLabels", () => {
     expect(r.matched).toHaveLength(0);
     expect(r.unfilled[0]!.skip).toBe("no-stored-answer");
   });
+
+  // Regression cases from a live GitLab Greenhouse form (issue #7 Phase 2):
+  test("First/Last Name* are exact-matched, not ambiguous vs full_name", () => {
+    const r = matchLabels(["First Name*", "Last Name*"], {
+      answers: { first_name: "Daniel", last_name: "Boll" },
+    });
+    const keys = r.matched.map((m) => m.key).sort();
+    expect(keys).toEqual(["first_name", "last_name"]);
+    expect(r.unfilled).toHaveLength(0);
+  });
+
+  test("long sponsorship label beats a fuzzy 'location' collision", () => {
+    const label =
+      "Will you now or in the future require sponsorship for a visa to remain in your current location?*";
+    const r = matchLabels([label], { answers: { requires_sponsorship: "No" } });
+    expect(r.matched).toHaveLength(1);
+    expect(r.matched[0]!.key).toBe("requires_sponsorship");
+    expect(r.matched[0]!.reason).toBe("synonym");
+  });
+
+  test("real Greenhouse EEO block is never auto-filled", () => {
+    const r = matchLabels(["Gender", "Veteran Status", "Disability Status"], {
+      answers: { eeo_gender: "x", eeo_veteran: "y", eeo_disability: "z" },
+    });
+    expect(r.matched).toHaveLength(0);
+    expect(r.unfilled.map((u) => u.skip)).toEqual([
+      "eeo-human-only",
+      "eeo-human-only",
+      "eeo-human-only",
+    ]);
+  });
 });
