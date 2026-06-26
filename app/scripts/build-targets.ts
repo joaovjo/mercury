@@ -22,6 +22,9 @@ const TARGETS: Array<{ bunTarget: string; asset: string }> = [
   { bunTarget: "bun-linux-arm64", asset: "mercury-linux-arm64" },
   { bunTarget: "bun-darwin-x64", asset: "mercury-darwin-x64" },
   { bunTarget: "bun-darwin-arm64", asset: "mercury-darwin-arm64" },
+  // Bun supports windows-x64 only (no windows-arm64). Output keeps the .exe
+  // extension so Windows treats it as an executable.
+  { bunTarget: "bun-windows-x64", asset: "mercury-windows-x64.exe" },
 ];
 
 const entry = join(appDir, "src/cli/index.ts");

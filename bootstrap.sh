@@ -38,18 +38,28 @@ bold "Mercury — installing/updating"
 command -v curl >/dev/null 2>&1 || die "curl is required. Install curl and re-run."
 
 # --- detect platform ---------------------------------------------------------
+# Echoes the release asset name for this platform, or returns 1 if unsupported.
+# Windows is detected when run under Git Bash / MSYS / Cygwin (uname -s gives
+# MINGW*/MSYS*/CYGWIN*); the asset carries a .exe extension there.
 detect_asset() {
   local os arch
   case "$(uname -s)" in
-    Linux)  os="linux" ;;
-    Darwin) os="darwin" ;;
-    *)      return 1 ;;
+    Linux)              os="linux" ;;
+    Darwin)             os="darwin" ;;
+    MINGW*|MSYS*|CYGWIN*) os="windows" ;;
+    *)                  return 1 ;;
   esac
   case "$(uname -m)" in
     x86_64|amd64)  arch="x64" ;;
     arm64|aarch64) arch="arm64" ;;
     *)             return 1 ;;
   esac
+  # Bun only ships windows-x64 (no windows-arm64).
+  if [ "$os" = "windows" ]; then
+    [ "$arch" = "x64" ] || return 1
+    printf 'mercury-%s-%s.exe' "$os" "$arch"
+    return 0
+  fi
   printf 'mercury-%s-%s' "$os" "$arch"
 }
 
@@ -138,8 +148,14 @@ install_from_source() {
 
 # --- prebuilt binary install -------------------------------------------------
 install_prebuilt() {
-  local asset tag
+  local asset tag binname
   asset="$(detect_asset)" || { warn "Unsupported platform for prebuilt binaries."; return 1; }
+
+  # On Windows the installed binary keeps its .exe extension.
+  case "$asset" in
+    *.exe) binname="mercury.exe" ;;
+    *)     binname="mercury" ;;
+  esac
 
   tag="$(resolve_tag)"
   [ -n "$tag" ] || { warn "Could not resolve a release tag."; return 1; }
@@ -150,7 +166,7 @@ install_prebuilt() {
   trap 'rm -rf "$tmp"' RETURN
 
   info "Downloading ${asset}..."
-  curl -fsSL "$base/$asset" -o "$tmp/mercury" || { warn "Binary download failed."; return 1; }
+  curl -fsSL "$base/$asset" -o "$tmp/$binname" || { warn "Binary download failed."; return 1; }
 
   # Verify checksum when SHA256SUMS is published and a hasher is available.
   if curl -fsSL "$base/SHA256SUMS" -o "$tmp/SHA256SUMS" 2>/dev/null; then
@@ -160,7 +176,7 @@ install_prebuilt() {
     if [ -n "$hasher" ]; then
       local want got
       want="$(grep " $asset\$" "$tmp/SHA256SUMS" | awk '{print $1}')"
-      got="$($hasher "$tmp/mercury" | awk '{print $1}')"
+      got="$($hasher "$tmp/$binname" | awk '{print $1}')"
       if [ -n "$want" ] && [ "$want" != "$got" ]; then
         die "Checksum mismatch for $asset (expected $want, got $got)."
       fi
@@ -169,8 +185,8 @@ install_prebuilt() {
   fi
 
   mkdir -p "$BIN_DIR"
-  install -m 755 "$tmp/mercury" "$BIN_DIR/mercury"
-  ok "Installed mercury → $BIN_DIR/mercury (prebuilt $tag)"
+  install -m 755 "$tmp/$binname" "$BIN_DIR/$binname"
+  ok "Installed mercury → $BIN_DIR/$binname (prebuilt $tag)"
 
   # Skills still ship in the repo; grab just the skills/ tree from the tag.
   if [ "${MERCURY_NO_SKILLS:-0}" != "1" ]; then

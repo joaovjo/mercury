@@ -82,4 +82,5 @@ jobs:
             app/dist/mercury-linux-arm64
             app/dist/mercury-darwin-x64
             app/dist/mercury-darwin-arm64
+            app/dist/mercury-windows-x64.exe
             app/dist/SHA256SUMS

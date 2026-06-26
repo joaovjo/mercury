@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <a href="#installation">Installation</a> · <a href="#the-dashboard">Dashboard</a> · <a href="#skills">Skills</a> · <a href=".assets/diagram.html">How it works</a>
+  <a href="#installation">Installation</a> · <a href="#the-dashboard">Dashboard</a> · <a href="#skills">Skills</a> · <a href=".github/assets/diagram.html">How it works</a>
 </p>
 
 ---
@@ -62,9 +62,9 @@ profile-optimizer → job-scout → resume-tailor → recruiter-outreach
 | **resume-tailor** | Takes your base resume + experience bank + scouted roles and produces role-tailored versions with gap analysis, ATS keyword alignment, and cover letters |
 | **recruiter-outreach** | Finds technical recruiters at target companies, prioritizes by proximity/mutuals, and sends tailored connection requests |
 
-See [`.assets/diagram.html`](.assets/diagram.html) for a visual of how the skills work together.
+See [`.github/assets/diagram.html`](.github/assets/diagram.html) for a visual of how the skills work together.
 
-![How Mercury works](.assets/diagram.png)
+![How Mercury works](.github/assets/diagram.png)
 
 ## The Dashboard
 
@@ -164,7 +164,11 @@ The one-liner installs (or updates) Mercury and copies the skills:
 - copies the skills into detected agent dirs (`~/.config/opencode/skills`, `~/.claude/skills`);
 - **falls back to a source build** with [Bun](https://bun.sh) if no prebuilt binary matches your platform.
 
-Prebuilt targets: `linux-x64`, `linux-arm64`, `darwin-x64`, `darwin-arm64`.
+Prebuilt targets: `linux-x64`, `linux-arm64`, `darwin-x64`, `darwin-arm64`, `windows-x64`.
+
+> **Windows:** run the one-liner from **Git Bash** (or WSL) — it installs
+> `mercury.exe`. There's no `windows-arm64` prebuilt (Bun doesn't compile it);
+> on Windows-arm64 the installer falls back to a source build with Bun.
 
 > Make sure `~/.local/bin` is on your `PATH` (the installer prints a hint if not).
 > Re-run the same command any time to update — `mercury` also prints a one-line

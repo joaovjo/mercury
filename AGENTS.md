@@ -115,8 +115,8 @@ CI (`.github/workflows/release.yml`) builds and publishes on tag push:
 git tag v0.3.0 && git push origin v0.3.0
 ```
 
-The workflow pins `app/package.json` to the tag, cross-compiles all four targets
-(`linux-x64`, `linux-arm64`, `darwin-x64`, `darwin-arm64`) with
+The workflow pins `app/package.json` to the tag, cross-compiles all five targets
+(`linux-x64`, `linux-arm64`, `darwin-x64`, `darwin-arm64`, `windows-x64.exe`) with
 `bun build --compile --target=…`, writes `SHA256SUMS`, and attaches them to a
 GitHub Release. The bootstrap then downloads the prebuilt binary (SHA-verified),
 falling back to a source build if no target matches.
