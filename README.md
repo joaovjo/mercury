@@ -1,6 +1,30 @@
-# Mercury
+<p align="center">
+  <img src=".github/assets/banner.png" alt="Mercury" width="640" />
+</p>
 
-> Your AI-powered job search companion — LinkedIn profile optimization, job scouting, recruiter outreach, and resume tailoring in one toolkit.
+<p align="center">
+  <strong>Your AI-powered job search companion</strong><br/>
+  <strong>Profile Optimizer • Job Scout • Experience Bank • Resume Tailor • Recruiter Outreach</strong><br/>
+  <sub>Audit and fix your LinkedIn profile, scout roles, tailor your resume, and reach recruiters — with a local dashboard to run it all.</sub>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/icons/opencode-dark.svg" />
+    <img src=".github/assets/icons/opencode-light.svg" alt="opencode" title="opencode" height="22" />
+  </picture>&nbsp;&nbsp;&nbsp;
+  <img src=".github/assets/icons/claude.svg" alt="Claude Code" title="Claude Code" height="28" />
+</p>
+
+<p align="center">
+  <sub>Runs your skills via <strong>opencode</strong> or <strong>Claude Code</strong> over ACP</sub>
+</p>
+
+<p align="center">
+  <a href="#installation">Installation</a> · <a href="#the-dashboard">Dashboard</a> · <a href="#skills">Skills</a> · <a href=".assets/diagram.html">How it works</a>
+</p>
+
+---
 
 Mercury is a collection of **AI agent skills** that automate your LinkedIn job search end-to-end. It works with any AI coding assistant that supports skill/instruction files (OpenCode, Cursor, Claude Code, Cline, Aider, etc.) paired with a [LinkedIn MCP Server](https://github.com/stickerdaniel/linkedin-mcp-server) and browser automation.
 
