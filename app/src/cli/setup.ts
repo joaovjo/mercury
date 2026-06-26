@@ -4,7 +4,7 @@ import { homedir } from "node:os";
 import { ensureHome, paths } from "../paths.ts";
 import { db } from "../db/index.ts";
 import { type Flags, str } from "./flags.ts";
-import { findSkillsSource, detectAgents, copyDir, type AgentTarget } from "./skills.ts";
+import { ensureSkillsSource, detectAgents, copyDir, type AgentTarget } from "./skills.ts";
 
 /**
  * mercury setup — install the Mercury skills into every detected agent, and
@@ -17,15 +17,15 @@ import { findSkillsSource, detectAgents, copyDir, type AgentTarget } from "./ski
  *   --all            include agents that aren't detected (creates their dirs)
  *   --skills-src <p> override where to read the skills from
  */
-export function setupCmd(flags: Flags): void {
+export async function setupCmd(flags: Flags): Promise<void> {
   ensureHome();
   db(); // ensure the home + db exist
 
-  const src = str(flags, "skills-src") ?? findSkillsSource();
+  const src = str(flags, "skills-src") ?? (await ensureSkillsSource());
   if (!src) {
-    console.error("error: couldn't locate the Mercury skills/ directory.");
-    console.error("  Set MERCURY_SKILLS_SRC=/path/to/repo/skills or run from a clone,");
-    console.error("  or reinstall via the bootstrap (which clones to ~/.mercury/src).");
+    console.error("error: couldn't locate or download the Mercury skills/ directory.");
+    console.error("  Set MERCURY_SKILLS_SRC=/path/to/repo/skills, run from a clone,");
+    console.error("  or check your network (setup fetches the skills tarball for prebuilt installs).");
     process.exit(1);
   }
 

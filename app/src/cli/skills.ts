@@ -1,7 +1,10 @@
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { existsSync, mkdirSync, readdirSync, statSync, copyFileSync, readlinkSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, statSync, copyFileSync, rmSync } from "node:fs";
+import { VERSION } from "../version.gen.ts";
+
+const REPO_SLUG = process.env.MERCURY_REPO_SLUG ?? "Daniel-Boll/mercury";
 
 /**
  * Locate the repo's `skills/` directory. Mercury is distributed as a single
@@ -33,6 +36,56 @@ export function findSkillsSource(): string | null {
 
   for (const c of candidates) {
     if (c && existsSync(c) && existsSync(join(c, "job-scout", "SKILL.md"))) return c;
+  }
+  return null;
+}
+
+/**
+ * Return a usable skills/ directory, downloading it if necessary.
+ *
+ * Prebuilt-binary installs don't keep a repo clone, so when no local source is
+ * found we fetch the version-matched source tarball from GitHub and cache the
+ * extracted `skills/` under ~/.mercury/skills-cache/<version>/.
+ */
+export async function ensureSkillsSource(): Promise<string | null> {
+  const local = findSkillsSource();
+  if (local) return local;
+  return downloadSkills();
+}
+
+async function downloadSkills(): Promise<string | null> {
+  const tag = `v${VERSION}`;
+  const cacheDir = join(homedir(), ".mercury", "skills-cache", tag);
+  const cachedSkills = join(cacheDir, "skills");
+  if (existsSync(join(cachedSkills, "job-scout", "SKILL.md"))) return cachedSkills;
+
+  const refs = [`refs/tags/${tag}`, "refs/heads/main"];
+  for (const ref of refs) {
+    try {
+      const url = `https://codeload.github.com/${REPO_SLUG}/tar.gz/${ref}`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
+      if (!res.ok) continue;
+      const tmp = join(tmpdir(), `mercury-skills-${Date.now()}`);
+      mkdirSync(tmp, { recursive: true });
+      const tgz = join(tmp, "src.tgz");
+      await Bun.write(tgz, await res.arrayBuffer());
+      const proc = Bun.spawnSync(["tar", "-xzf", tgz, "-C", tmp]);
+      if (!proc.success) {
+        rmSync(tmp, { recursive: true, force: true });
+        continue;
+      }
+      const top = readdirSync(tmp).find((d) => d.startsWith("mercury-") || d.includes("-mercury-"));
+      const extractedSkills = top ? join(tmp, top, "skills") : null;
+      if (extractedSkills && existsSync(join(extractedSkills, "job-scout", "SKILL.md"))) {
+        mkdirSync(cacheDir, { recursive: true });
+        copyDir(extractedSkills, cachedSkills);
+        rmSync(tmp, { recursive: true, force: true });
+        return cachedSkills;
+      }
+      rmSync(tmp, { recursive: true, force: true });
+    } catch {
+      /* try next ref */
+    }
   }
   return null;
 }

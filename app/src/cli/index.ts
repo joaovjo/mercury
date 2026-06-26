@@ -66,7 +66,7 @@ async function main() {
       initCmd();
       break;
     case "setup":
-      setupCmd(flags);
+      await setupCmd(flags);
       break;
     case "dashboard": {
       const { dashboardCmd } = await import("../server/index.ts");
