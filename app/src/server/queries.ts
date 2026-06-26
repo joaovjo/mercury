@@ -132,9 +132,19 @@ export const queries = {
       .query(`
         SELECT a.id, a.job_id, j.title AS job_title, j.company_name,
                a.resume_path, a.cover_letter_path, a.report_path,
-               a.keyword_score, a.status, a.applied_at
+               a.keyword_score, a.status, a.applied_at,
+               a.portal, a.external_url, a.fields_filled_json, a.unfilled_json
         FROM applications a LEFT JOIN jobs j ON j.id = a.job_id
         ORDER BY a.id DESC
+      `)
+      .all();
+  },
+
+  answers() {
+    return db()
+      .query(`
+        SELECT key, value, category, updated_at FROM applicant_answers
+        ORDER BY category, key
       `)
       .all();
   },

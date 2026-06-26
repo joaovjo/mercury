@@ -97,13 +97,13 @@ export async function interviewCmd(sub: string, flags: Flags): Promise<void> {
   process.exit(1);
 }
 
-/** mercury application add */
+/** mercury application add | update */
 export async function applicationCmd(sub: string, flags: Flags): Promise<void> {
   const d = db();
   if (sub === "add") {
     const row = d.query(`
-      INSERT INTO applications (job_id, resume_path, cover_letter_path, report_path, keyword_score, status, applied_at)
-      VALUES ($job, $resume, $cover, $report, $score, $status, $applied)
+      INSERT INTO applications (job_id, resume_path, cover_letter_path, report_path, keyword_score, status, applied_at, portal, external_url)
+      VALUES ($job, $resume, $cover, $report, $score, $status, $applied, $portal, $url)
       RETURNING id
     `).get({
       $job: int(flags, "job-id") ?? null,
@@ -113,12 +113,92 @@ export async function applicationCmd(sub: string, flags: Flags): Promise<void> {
       $score: int(flags, "keyword-score") ?? null,
       $status: str(flags, "status") ?? "draft",
       $applied: str(flags, "applied-at") ?? null,
+      $portal: str(flags, "portal") ?? null,
+      $url: str(flags, "external-url") ?? null,
     }) as { id: number };
     await notifyChange("applications");
     console.log(`application #${row.id} added`);
     return;
   }
+  if (sub === "update") {
+    const id = int(flags, "id");
+    if (id === undefined) {
+      console.error("error: missing required --id");
+      process.exit(1);
+    }
+    // Build a partial UPDATE from only the flags actually provided, so callers
+    // can transition status without clobbering portal/url/json columns.
+    const sets: string[] = [];
+    const params: Record<string, string | number | null> = { $id: id };
+    const map: Record<string, string> = {
+      status: "status",
+      portal: "portal",
+      "external-url": "external_url",
+      fields: "fields_filled_json",
+      unfilled: "unfilled_json",
+      "applied-at": "applied_at",
+      "resume-path": "resume_path",
+      "cover-path": "cover_letter_path",
+      "report-path": "report_path",
+    };
+    for (const [flag, col] of Object.entries(map)) {
+      const v = str(flags, flag);
+      if (v !== undefined) {
+        sets.push(`${col} = $${col}`);
+        params[`$${col}`] = v;
+      }
+    }
+    if (sets.length === 0) {
+      console.error("error: nothing to update (pass --status/--portal/--external-url/--fields/--unfilled/...)");
+      process.exit(1);
+    }
+    const res = d.query(
+      `UPDATE applications SET ${sets.join(", ")} WHERE id = $id RETURNING id`,
+    ).get(params) as { id: number } | null;
+    if (!res) {
+      console.error(`error: application #${id} not found`);
+      process.exit(1);
+    }
+    await notifyChange("applications");
+    console.log(`application #${id} updated`);
+    return;
+  }
   console.error(`unknown application subcommand: ${sub}`);
+  process.exit(1);
+}
+
+/** mercury answer set | list — reusable PII/eligibility/links/EEO answer store. */
+export async function answerCmd(sub: string, flags: Flags): Promise<void> {
+  const d = db();
+  if (sub === "set") {
+    const key = reqStr(flags, "key");
+    const value = str(flags, "value") ?? null;
+    d.query(`
+      INSERT INTO applicant_answers (key, value, category, updated_at)
+      VALUES ($key, $value, $cat, $at)
+      ON CONFLICT(key) DO UPDATE SET
+        value = excluded.value,
+        category = COALESCE(excluded.category, applicant_answers.category),
+        updated_at = excluded.updated_at
+    `).run({
+      $key: key,
+      $value: value,
+      $cat: str(flags, "category") ?? "custom",
+      $at: now(),
+    });
+    await notifyChange("applicant_answers");
+    console.log(`answer '${key}' set`);
+    return;
+  }
+  if (sub === "list") {
+    const cat = str(flags, "category");
+    const rows = cat
+      ? d.query(`SELECT key, value, category, updated_at FROM applicant_answers WHERE category = ? ORDER BY category, key`).all(cat)
+      : d.query(`SELECT key, value, category, updated_at FROM applicant_answers ORDER BY category, key`).all();
+    console.log(JSON.stringify(rows, null, 2));
+    return;
+  }
+  console.error(`unknown answer subcommand: ${sub}`);
   process.exit(1);
 }
 

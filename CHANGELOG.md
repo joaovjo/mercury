@@ -7,7 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.5.0] - 2026-06-26
+### Added
+
+- **`portal-filler` foundations (issue #7, Phases 1–2).** Groundwork for
+  autofilling external ATS application forms via Chrome MCP:
+  - New `applicant_answers` table — a reusable, dashboard-editable store of
+    canonical answers (`contact` / `eligibility` / `links` / `eeo` / `custom`),
+    with `mercury answer set` (upsert) and `mercury answer list`.
+  - `applications` extended with `portal`, `external_url`, `fields_filled_json`,
+    and `unfilled_json`, plus `mercury application update --id` for the
+    `draft → filled → submitted` (+ `needs_input`) lifecycle. Schema bumped to
+    v2 with an idempotent additive-column migration (introspects
+    `PRAGMA table_info`, since SQLite has no `ADD COLUMN IF NOT EXISTS`).
+  - Shared `mercury export --typ <f> --out <f.pdf>` helper that compiles Typst
+    to a real PDF (what Chrome MCP `upload_file` needs), with clear guidance if
+    `typst` is not installed.
+  - Dashboard `applications()` query now returns the new columns and a new
+    `/api/answers` route exposes the answer store.
+  - `skills/portal-filler/SKILL.md` scaffold: detect ATS → snapshot →
+    label-match → fill → **pause for human review** (never auto-submits, mirrors
+    `recruiter-outreach`'s `confirm_send`). EEO/demographic fields are stored but
+    never auto-filled; unknown fields are surfaced, never guessed.
+
+
 
 ### Fixed
 

@@ -3,7 +3,7 @@
  * Single migration block for v0.1; versioned migrations can layer on later
  * via the `schema_version` pragma table.
  */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export const SCHEMA_SQL = /* sql */ `
 CREATE TABLE IF NOT EXISTS meta (
@@ -86,6 +86,17 @@ CREATE TABLE IF NOT EXISTS applications (
   applied_at       TEXT
 );
 
+-- Reusable, single-source-of-truth answers for external ATS application forms
+-- (PII / eligibility / links / EEO). Dashboard-editable via \`mercury answer\`.
+-- EEO answers MAY be stored here, but skills never auto-fill them — the human
+-- enters EEO/demographic fields at review time.
+CREATE TABLE IF NOT EXISTS applicant_answers (
+  key        TEXT PRIMARY KEY,
+  value      TEXT,
+  category   TEXT NOT NULL DEFAULT 'custom',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS interviews (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   company       TEXT NOT NULL,
@@ -118,4 +129,21 @@ CREATE INDEX IF NOT EXISTS idx_recruiters_company ON recruiters(company);
 CREATE INDEX IF NOT EXISTS idx_jobs_status        ON jobs(status);
 CREATE INDEX IF NOT EXISTS idx_metrics_captured   ON profile_metrics(captured_at);
 CREATE INDEX IF NOT EXISTS idx_activity_ts        ON activity_log(ts);
+CREATE INDEX IF NOT EXISTS idx_answers_category   ON applicant_answers(category);
 `;
+
+/**
+ * Additive column migrations for tables that predate a feature. SQLite has no
+ * \`ADD COLUMN IF NOT EXISTS\`, so we introspect \`PRAGMA table_info\` and only add
+ * what's missing. Safe to run on every open (idempotent).
+ *
+ * portal-filler (issue #7) extends \`applications\` with ATS-fill metadata.
+ */
+export const COLUMN_MIGRATIONS: Record<string, Record<string, string>> = {
+  applications: {
+    portal: "TEXT",
+    external_url: "TEXT",
+    fields_filled_json: "TEXT",
+    unfilled_json: "TEXT",
+  },
+};

@@ -9,6 +9,7 @@ import {
   scoreCmd,
   interviewCmd,
   applicationCmd,
+  answerCmd,
   activityCmd,
 } from "./records.ts";
 import { importJourneyCmd } from "./import-journey.ts";
@@ -31,7 +32,11 @@ Write API (used by skills):
   mercury metric record [--search-appearances --profile-views --post-impressions --connections --score]
   mercury score record --value <n> [--signals <json>]
   mercury interview add --company <c> [--when --stage --status --note]
-  mercury application add [--job-id --resume-path --cover-path --report-path --keyword-score --status]
+  mercury application add [--job-id --resume-path --cover-path --report-path --keyword-score --status --portal --external-url]
+  mercury application update --id <n> [--status --portal --external-url --fields --unfilled]
+  mercury answer set --key <k> [--value --category]   Set a reusable application answer
+  mercury answer list [--category <c>]                List reusable application answers
+  mercury export --typ <file> --out <file.pdf>        Compile a Typst doc to PDF
   mercury activity log [--kind --skill --summary --payload]
 
 Options:
@@ -110,6 +115,14 @@ async function main() {
     case "application":
       await applicationCmd(positionals[0] ?? "", flags);
       break;
+    case "answer":
+      await answerCmd(positionals[0] ?? "", flags);
+      break;
+    case "export": {
+      const { exportCmd } = await import("./export.ts");
+      await exportCmd(flags);
+      break;
+    }
     case "activity":
       await activityCmd(flags);
       break;

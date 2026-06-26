@@ -192,6 +192,8 @@ function handleApi(path: string): Response {
       return Response.json(queries.interviews());
     case "/api/applications":
       return Response.json(queries.applications());
+    case "/api/answers":
+      return Response.json(queries.answers());
     case "/api/activity":
       return Response.json(queries.activity());
     case "/api/profile":
