@@ -52,12 +52,31 @@ jobs:
         working-directory: app/dist
         run: ls -lh mercury-* SHA256SUMS
 
+      - name: Extract changelog section
+        id: changelog
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          if body="$(scripts/extract-changelog.sh "$VERSION" CHANGELOG.md)"; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "body<<__CHANGELOG_EOF__"
+              echo "$body"
+              echo "__CHANGELOG_EOF__"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "No CHANGELOG section for $VERSION; falling back to auto-generated notes."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
           name: Mercury ${{ steps.ver.outputs.tag }}
-          generate_release_notes: true
+          # Use the CHANGELOG section as the release body when present;
+          # otherwise fall back to GitHub's auto-generated notes.
+          body: ${{ steps.changelog.outputs.found == 'true' && steps.changelog.outputs.body || '' }}
+          generate_release_notes: ${{ steps.changelog.outputs.found != 'true' }}
           files: |
             app/dist/mercury-linux-x64
             app/dist/mercury-linux-arm64

@@ -121,6 +121,16 @@ The workflow pins `app/package.json` to the tag, cross-compiles all four targets
 GitHub Release. The bootstrap then downloads the prebuilt binary (SHA-verified),
 falling back to a source build if no target matches.
 
+### Changelog → release notes
+
+Before tagging, add a section to `CHANGELOG.md` for the new version using the
+[Keep a Changelog](https://keepachangelog.com/) format
+(`## [X.Y.Z] - YYYY-MM-DD`). The release workflow runs
+`scripts/extract-changelog.sh <version>` to pull that section and use it as the
+GitHub Release body. If no matching section exists, it falls back to GitHub's
+auto-generated notes (so a missing entry won't fail the release — but always add
+one). Keep an `## [Unreleased]` section at the top for in-flight changes.
+
 ### Update check internals
 
 `mercury` checks the [Releases API](https://api.github.com/repos/Daniel-Boll/mercury/releases/latest)
