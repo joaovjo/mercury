@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-26
+
 ### Added
 
 - **`portal-filler` foundations (issue #7, Phases 1–5).** Groundwork for
@@ -164,7 +166,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cache-bust the update check to avoid raw CDN staleness.
 - Bootstrap script: use ASCII `...` instead of a multibyte ellipsis.
 
-[Unreleased]: https://github.com/Daniel-Boll/mercury/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/Daniel-Boll/mercury/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/Daniel-Boll/mercury/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Daniel-Boll/mercury/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Daniel-Boll/mercury/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Daniel-Boll/mercury/compare/v0.3.0...v0.3.1
