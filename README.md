@@ -57,15 +57,19 @@ call (`mercury recruiter add`, `mercury job save`, …) — one schema, one sour
 ### Install
 
 ```bash
-./install.sh                      # builds the binary, links it to ~/.local/bin
+# one-liner — install or update (also copies the skills)
+curl -fsSL https://raw.githubusercontent.com/Daniel-Boll/mercury/main/bootstrap.sh | bash
+
 mercury init                      # scaffold ~/.mercury/ + database
 mercury import-journey JOURNEY.md # optional: migrate an existing journal
 mercury dashboard                 # open the hub
 ```
 
-Requires [Bun](https://bun.sh). For the **Launch** tab you also need an ACP-capable
-agent on PATH — `opencode` (native `opencode acp`) or `claude` (Claude Code, via
-`@zed-industries/claude-code-acp`).
+Already have the repo cloned? Run `./install.sh` instead of the curl line.
+
+Requires [Bun](https://bun.sh) (the installer adds it if missing). For the **Launch**
+tab you also need an ACP-capable agent on PATH — `opencode` (native `opencode acp`)
+or `claude` (Claude Code, via `@zed-industries/claude-code-acp`).
 
 ## The `.mercury/` Directory
 
@@ -131,7 +135,28 @@ into LinkedIn in that session.
 
 ## Installation
 
-Mercury skills are plain markdown files. Copy them into your AI assistant's skill directory:
+### One-liner (recommended)
+
+Installs the `mercury` binary **and** copies the skills into your agent's config.
+Run the **same command again any time to update** — it pulls the latest, rebuilds, and reinstalls.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Daniel-Boll/mercury/main/bootstrap.sh | bash
+```
+
+The bootstrap will:
+- install [Bun](https://bun.sh) if it's missing,
+- clone/update the repo into `~/.mercury/src`,
+- build and link the binary to `~/.local/bin/mercury`,
+- copy the skills into detected agent dirs (`~/.config/opencode/skills`, `~/.claude/skills`).
+
+Env overrides: `MERCURY_REF` (branch/tag), `MERCURY_BIN_DIR`, `MERCURY_SKILLS_DIR`, `MERCURY_NO_SKILLS=1`.
+
+> Make sure `~/.local/bin` is on your `PATH` (the installer prints a hint if not).
+
+### Manual (skills only)
+
+Mercury skills are plain markdown files — copy them into your AI assistant's skill directory:
 
 ### OpenCode
 ```bash
