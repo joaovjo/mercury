@@ -3,7 +3,7 @@ import { matchLabels, normalize, editDistance } from "./matcher.ts";
 
 const ANSWERS = {
   email: "me@example.com",
-  phone: "+55 11 99999-0000",
+  phone: "+1 555 000-0000",
   requires_sponsorship: "No",
   linkedin_url: "https://linkedin.com/in/me",
   github_url: "https://github.com/me",

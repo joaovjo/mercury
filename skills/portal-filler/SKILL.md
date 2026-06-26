@@ -51,7 +51,7 @@ used by `recruiter-outreach`.
   reusable next time:
 
   ```
-  mercury answer set --key phone --value "+55 ..." --category contact
+  mercury answer set --key phone --value "+1 555 ..." --category contact
   ```
 
 ### 2. Produce the upload PDF
@@ -121,6 +121,29 @@ Inspect the opportunity `link` host and the page DOM:
 > answers** (work authorization, years of experience, EEO). The matcher already
 > refuses to fill EEO fields and anything with no stored value — respect its
 > `unfilled` list, don't fill those by hand from assumptions.
+
+### 4a. Real-world fill mechanics (learned against a live Greenhouse form)
+
+ATS forms are messier than a flat label list suggests. Handle these:
+
+- **Plain text/tel/email inputs** fill reliably. Set the value and dispatch
+  `input` + `change` events (React-controlled inputs ignore a bare value set).
+- **Phone fields** are often an `intl-tel-input` widget that **reformats** the
+  number (e.g. `(+12) 34 5 6789-0000` → `+12 34 567890000`). The reformatted
+  value is correct — don't treat the difference as a failure.
+- **Dropdowns are comboboxes, not text inputs.** Many questions that look like
+  free-text (country of residence, "require sponsorship?", yes/no screeners) are
+  `Select...` comboboxes. You must click to open, then click the option — typing
+  a raw value may not register. Confirm the selected text after.
+- **File uploads are unreliable via a single `upload_file`.** Greenhouse/Lever
+  use async S3-backed widgets behind an "Attach" button and swap the underlying
+  `<input type=file>` out after selection. Click "Attach", upload, then
+  **verify the chosen filename is shown** before trusting it; if it didn't land,
+  tell the user to attach the PDF manually. (PDF is produced by `mercury export`.)
+- **reCAPTCHA / SSO** may gate submission — out of scope; leave for the human.
+
+When something can't be filled programmatically, add it to the review summary as
+a "do this yourself" item rather than silently skipping it.
 
 ### 5. Persist + surface
 
