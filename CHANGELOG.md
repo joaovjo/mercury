@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Windows prebuilt binary (`windows-x64`). The release workflow now cross-compiles
+  a `mercury-windows-x64.exe`, and `bootstrap.sh` installs it when run under Git
+  Bash / MSYS / Cygwin. (No `windows-arm64` prebuilt — Bun can't compile it; that
+  platform falls back to a source build.)
+- **job-scout**: support pasted LinkedIn Jobs search URLs — parses `f_C`
+  (multi-company URN list), `geoId`, `f_TPR`, `keywords`, `sortBy`, and pagination,
+  and reproduces the search (via Chrome MCP, with a LinkedIn-MCP per-company
+  fallback). Adds an auto-widening recency window that progressively broadens
+  (5.5h → 24h → 7d → 30d) when nothing recent is found and reports how far it
+  widened. Configurable via `[job_scout]` in `config.toml`. (#4)
+
+### Changed
+
+- Moved the architecture diagram from `.assets/` to `.github/assets/`.
+
 ## [0.3.1] - 2026-06-26
 
 ### Fixed
