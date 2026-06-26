@@ -11,9 +11,11 @@
   import Applications from "./sections/Applications.svelte";
   import Interviews from "./sections/Interviews.svelte";
   import Activity from "./sections/Activity.svelte";
+  import Answers from "./sections/Answers.svelte";
   import {
     LayoutDashboard, UserRound, Search as SearchIcon, Rocket, Users,
     Briefcase, FileText, CalendarClock, Activity as ActivityIcon, Download,
+    ClipboardList,
   } from "@lucide/svelte";
 
   let active = $state("overview");
@@ -64,6 +66,7 @@
     { id: "recruiters", label: "Recruiters", icon: Users },
     { id: "jobs", label: "Jobs", icon: Briefcase },
     { id: "applications", label: "Applications", icon: FileText },
+    { id: "answers", label: "Answers", icon: ClipboardList },
     { id: "interviews", label: "Interviews", icon: CalendarClock },
     { id: "activity", label: "Activity", icon: ActivityIcon },
   ];
@@ -133,6 +136,7 @@
     {:else if active === "recruiters"}<Recruiters />
     {:else if active === "jobs"}<Jobs />
     {:else if active === "applications"}<Applications />
+    {:else if active === "answers"}<Answers />
     {:else if active === "interviews"}<Interviews />
     {:else if active === "activity"}<Activity />
     {/if}

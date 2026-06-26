@@ -49,6 +49,10 @@ Re-run the **same `curl` command any time to update**. See [Installation](#insta
 profile-optimizer → job-scout → resume-tailor → recruiter-outreach
      fix your         find the      tailor your      reach the
      profile          roles          resume          recruiters
+                                │
+                                └──→ portal-filler
+                                     autofill the
+                                     ATS application
 ```
 
 ## Skills
@@ -60,6 +64,7 @@ profile-optimizer → job-scout → resume-tailor → recruiter-outreach
 | **experience-bank** | "Grill me" — periodically interviews you about new achievements and stores them as a tagged, reusable pool in `.mercury/experience/` that resume-tailor draws from. Run occasionally, not per application |
 | **resume-tailor** | Takes your base resume + experience bank + scouted roles and produces role-tailored versions with gap analysis, ATS keyword alignment, and cover letters |
 | **recruiter-outreach** | Finds technical recruiters at target companies, prioritizes by proximity/mutuals, and sends tailored connection requests |
+| **portal-filler** | Autofills an external ATS application form (Greenhouse / Lever / Ashby + generic) from your stored answers and tailored resume, then **pauses for you to review and submit** — it never submits for you |
 
 See [`.github/assets/diagram.html`](.github/assets/diagram.html) for a visual of how the skills work together.
 
@@ -203,6 +208,7 @@ The agent loads these skills automatically when your request matches their descr
 - _"Find backend engineer roles at DoorDash and Airbnb in São Paulo"_ → loads `job-scout`
 - _"Tailor my resume for these 3 roles I scouted"_ → loads `resume-tailor`
 - _"Find recruiters at Uber who hire in Brazil and connect with them"_ → loads `recruiter-outreach`
+- _"Fill out this Greenhouse application for me"_ (with a job URL) → loads `portal-filler`
 
 ## What Mercury Can Do
 
@@ -246,9 +252,28 @@ The agent loads these skills automatically when your request matches their descr
 - Send connection requests with short, specific notes (<300 chars)
 - Provide follow-up templates for post-acceptance
 
+### Portal Filler
+
+- Detects the ATS from the job URL (`mercury detect-portal`) and loads its known field selectors — Greenhouse, Lever, Ashby, or a generic snapshot-driven fallback
+- Fills your contact / eligibility / links from a reusable answer store (`mercury answer set`), maps the rest of the form's labels with `mercury match`, and uploads your compiled resume PDF (`mercury export`)
+- **Pauses for human review and never clicks Submit** — you verify the open browser and submit yourself (mirrors `recruiter-outreach`'s confirm step)
+- **Never auto-fills EEO/demographic fields**, and surfaces anything it couldn't confidently map instead of guessing
+- Edit your stored answers and watch application status (`draft → filled → submitted`) in the dashboard's **Answers** and **Applications** tabs
+
+#### Application CLI (used by `portal-filler`)
+
+```
+mercury answer set --key phone --value "+1 555 ..." --category contact
+mercury answer list
+mercury detect-portal --url "https://job-boards.greenhouse.io/acme/jobs/123"
+mercury match --labels '["Email *","Phone","LinkedIn Profile"]'
+mercury export --typ resume.typ --out resume.pdf
+mercury application update --id 1 --status filled --portal greenhouse --unfilled '["work_authorization"]'
+```
+
 ## Known Quirks & Limitations
 
-- **Cannot auto-apply** to external ATS (Workday, Greenhouse) — these need personal data and auth answers
+- **Auto-apply is fill-then-pause, not fully autonomous** — `portal-filler` fills external ATS forms (Greenhouse/Lever/Ashby) but stops before Submit so you review and send. Workday, Taleo, and iCIMS (multi-step, iframe-heavy, account-gated) and opt-in auto-submit are not yet supported; CAPTCHA/SSO are left to the human.
 - **LinkedIn rate limits** — don't send >10-15 connection requests per session
 - **Top Skills** are managed inside the About editor (`/add-edit/SUMMARY/`), not the Skills detail page
 - **Company URN IDs** are required for people search filters — plain names are silently ignored

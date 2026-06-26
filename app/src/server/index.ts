@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { Flags } from "../cli/flags.ts";
 import { int, str } from "../cli/flags.ts";
 import { ensureHome, paths } from "../paths.ts";
-import { db } from "../db/index.ts";
+import { db, now } from "../db/index.ts";
 import { queries } from "./queries.ts";
 import { SessionManager } from "../acp/session.ts";
 import { PROVIDERS, listProviderModels } from "../acp/providers.ts";
@@ -78,6 +78,34 @@ export async function dashboardCmd(flags: Flags): Promise<void> {
         }
         if (path === "/api/update-status") {
           return Response.json(await getUpdateStatus());
+        }
+        // Answer-store editor (portal-filler Phase 4) — upsert a reusable answer.
+        if (path === "/api/answer" && req.method === "POST") {
+          const body = (await req.json().catch(() => ({}))) as {
+            key?: string;
+            value?: string;
+            category?: string;
+          };
+          const key = (body.key ?? "").trim();
+          if (!key) return Response.json({ error: "missing key" }, { status: 400 });
+          db()
+            .query(
+              `INSERT INTO applicant_answers (key, value, category, updated_at)
+               VALUES ($key, $value, $cat, $at)
+               ON CONFLICT(key) DO UPDATE SET
+                 value = excluded.value,
+                 category = COALESCE(excluded.category, applicant_answers.category),
+                 updated_at = excluded.updated_at`,
+            )
+            .run({
+              $key: key,
+              $value: body.value ?? null,
+              $cat: body.category ?? "custom",
+              $at: now(),
+            });
+          // Notify all live dashboards (including this one) so tables refresh.
+          broadcast(sockets, { type: "changed", table: "applicant_answers" });
+          return Response.json({ ok: true });
         }
         if (path === "/api/update" && req.method === "POST") {
           if (updateRunning) return Response.json({ ok: true, running: true });

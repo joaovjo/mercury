@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **`portal-filler` foundations (issue #7, Phases 1–3).** Groundwork for
+- **`portal-filler` foundations (issue #7, Phases 1–5).** Groundwork for
   autofilling external ATS application forms via Chrome MCP:
   - New `applicant_answers` table — a reusable, dashboard-editable store of
     canonical answers (`contact` / `eligibility` / `links` / `eeo` / `custom`),
@@ -50,6 +50,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     skill fills known core fields by selector for reliability, then falls back to
     the generic matcher for per-posting custom questions. 14 `bun test` cases
     cover detection + field specs (25 portal-filler tests total).
+  - **Dashboard Answers tab + Applications badges.** A new **Answers** section
+    edits the reusable answer store inline (add / edit, grouped by category) via
+    a new `POST /api/answer` upsert route that live-broadcasts the change. The
+    **Applications** table now shows the `portal` and lifecycle status
+    (`draft`/`filled`/`submitted`/`needs_input`) as pills and links the row to
+    the `external_url`.
+  - **Docs + install.** `portal-filler` is auto-installed by `mercury setup`
+    (it copies the whole `skills/` dir); README and AGENTS.md now document the
+    skill, the application CLI (`answer`/`match`/`detect-portal`/`export`/
+    `application update`), and that Workday/Taleo/iCIMS and opt-in auto-submit
+    remain future work.
 
 
 

@@ -37,17 +37,22 @@
 {:else}
   <div class="panel">
     <table>
-      <thead><tr><th>Role / Target</th><th>Company</th><th>Keyword Score</th><th>Status</th><th>Files</th></tr></thead>
+      <thead><tr><th>Role / Target</th><th>Company</th><th>Portal</th><th>Score</th><th>Status</th><th>Files</th></tr></thead>
       <tbody>
         {#each apps.data as a}
           <tr>
             <td>
-              {derivedLabel(a)}
+              {#if a.external_url}
+                <a href={a.external_url} target="_blank" rel="noreferrer" class="text-cyan hover:underline">{derivedLabel(a)}</a>
+              {:else}
+                {derivedLabel(a)}
+              {/if}
               {#if !a.job_id}<span class="dim text-[0.72rem]" title="Not linked to a scouted job">· unlinked</span>{/if}
             </td>
             <td>{a.company_name ?? "—"}</td>
+            <td>{#if a.portal}<span class="pill neutral">{a.portal}</span>{:else}<span class="dim">—</span>{/if}</td>
             <td>{a.keyword_score != null ? `${a.keyword_score}%` : "—"}</td>
-            <td class="dim">{a.status}</td>
+            <td><span class="pill {a.status}">{a.status.replace("_", " ")}</span></td>
             <td class="dim text-[0.78rem]">
               {#if a.resume_path}resume {/if}{#if a.cover_letter_path}· cover {/if}{#if a.report_path}· report{/if}
             </td>

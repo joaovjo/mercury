@@ -82,6 +82,11 @@ a:hover { text-decoration: underline; }
   .pill.stretch      { background: rgba(245,158,11,.15); color: var(--color-amber); }
   .pill.bad          { background: rgba(239,68,68,.15); color: var(--color-red); }
   .pill.neutral      { background: #27272a; color: var(--color-muted); }
+  /* Application lifecycle (portal-filler) */
+  .pill.draft        { background: #27272a; color: var(--color-muted); }
+  .pill.filled       { background: rgba(245,158,11,.15); color: var(--color-amber); }
+  .pill.submitted    { background: rgba(34,197,94,.15); color: var(--color-green); }
+  .pill.needs_input  { background: rgba(239,68,68,.15); color: var(--color-red); }
 
   .live-dot {
     @apply w-2 h-2 rounded-full bg-green inline-block;
