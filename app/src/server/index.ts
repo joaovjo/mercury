@@ -10,6 +10,8 @@ import { SessionManager } from "../acp/session.ts";
 import { PROVIDERS, listProviderModels } from "../acp/providers.ts";
 import { loadConfig } from "../paths.ts";
 import { EMBEDDED_ASSETS } from "./assets.gen.ts";
+import { getUpdateStatus } from "../update-check.ts";
+import { runUpdate } from "../cli/update.ts";
 
 /** Directory holding the built Svelte assets (web/dist), resolved next to this file or the binary. */
 function webDir(): string {
@@ -34,6 +36,7 @@ export async function dashboardCmd(flags: Flags): Promise<void> {
   const root = webDir();
 
   const sockets = new Set<import("bun").ServerWebSocket<WSData>>();
+  let updateRunning = false;
 
   // ACP session manager — forwards agent updates to all connected sockets.
   const acp = new SessionManager(process.cwd(), (event) => broadcast(sockets, event));
@@ -72,6 +75,25 @@ export async function dashboardCmd(flags: Flags): Promise<void> {
         // Search endpoints (Phase 2) — POST with JSON body, hit LinkedIn MCP.
         if (path.startsWith("/api/search/")) {
           return handleSearch(path, req);
+        }
+        if (path === "/api/update-status") {
+          return Response.json(await getUpdateStatus());
+        }
+        if (path === "/api/update" && req.method === "POST") {
+          if (updateRunning) return Response.json({ ok: true, running: true });
+          updateRunning = true;
+          void runUpdate((event) => {
+            broadcast(sockets, { type: "update", event });
+            if (event.type === "done") updateRunning = false;
+          }).catch((err) => {
+            updateRunning = false;
+            broadcast(sockets, {
+              type: "update",
+              event: { type: "line", stream: "stderr", text: String(err) + "\n" },
+            });
+            broadcast(sockets, { type: "update", event: { type: "done", code: 1 } });
+          });
+          return Response.json({ ok: true, running: true });
         }
         // ACP endpoints (Phase 3) — launch skills via the agent.
         if (path === "/api/acp/providers") {

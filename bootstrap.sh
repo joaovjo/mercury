@@ -218,5 +218,6 @@ if ! command -v mercury >/dev/null 2>&1; then
 fi
 
 VERSION="$("$BIN_DIR/mercury" --version 2>/dev/null || echo mercury)"
+"$BIN_DIR/mercury" init >/dev/null || warn "Installed, but initialization failed — run: mercury init"
 bold "Done — $VERSION"
-echo "  Next:  mercury init && mercury dashboard"
+echo "  Next:  mercury dashboard"

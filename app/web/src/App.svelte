@@ -1,5 +1,5 @@
 <script>
-  import { api, onConnection } from "./api.js";
+  import { api, onConnection, post, subscribe } from "./api.js";
   import { resource } from "./lib/resource.svelte.js";
   import { useLiveTable } from "./lib/live.svelte.js";
   import Overview from "./sections/Overview.svelte";
@@ -13,21 +13,48 @@
   import Activity from "./sections/Activity.svelte";
   import {
     LayoutDashboard, UserRound, Search as SearchIcon, Rocket, Users,
-    Briefcase, FileText, CalendarClock, Activity as ActivityIcon,
+    Briefcase, FileText, CalendarClock, Activity as ActivityIcon, Download,
   } from "@lucide/svelte";
 
   let active = $state("overview");
   let connected = $state(false);
+  let updating = $state(false);
+  let updateOutput = $state("");
 
   // Overview drives the sidebar badges + the Overview page. Refresh it when any
   // table that feeds its counts changes.
   const overview = resource(() => api("overview"), null);
+  const updateStatus = resource(() => api("update-status"), null);
   useLiveTable(
     ["recruiters", "jobs", "interviews", "applications", "profile_metrics"],
     overview.reload
   );
 
   $effect(() => onConnection((c) => (connected = c)));
+  $effect(() => subscribe((msg) => {
+    if (msg.type !== "update") return;
+    const event = msg.event;
+    if (event.type === "line") {
+      updateOutput = (updateOutput + event.text).slice(-2000);
+    } else if (event.type === "done") {
+      updating = false;
+      updateOutput += event.code === 0
+        ? "\nUpdate complete. Restart the dashboard to use the new binary.\n"
+        : `\nUpdate failed with exit code ${event.code}.\n`;
+      updateStatus.reload();
+    }
+  }));
+
+  async function startUpdate() {
+    updating = true;
+    updateOutput = "Starting update...\n";
+    try {
+      await post("update");
+    } catch (err) {
+      updating = false;
+      updateOutput += `${err.message ?? err}\n`;
+    }
+  }
 
   const nav = [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -63,11 +90,38 @@
         {#if item.id === "jobs" && ov}<span class="ml-auto text-[0.72rem] text-dim">{ov.jobs}</span>{/if}
       </button>
     {/each}
-    <div class="absolute bottom-[18px] left-3.5 text-[0.74rem] text-dim flex items-center gap-1.5">
-      <span class="w-2 h-2 rounded-full inline-block"
-        style:background={connected ? "var(--color-green)" : "var(--color-dim)"}
-        style:box-shadow={connected ? "0 0 8px var(--color-green)" : "none"}></span>
-      {connected ? "live" : "offline"}
+    <div class="absolute bottom-[18px] left-3.5 right-3.5 space-y-3">
+      {#if updateStatus.status === "ready"}
+        <div class="rounded-xl border border-border bg-panel-2 p-3 text-[0.76rem]">
+          <div class="font-semibold text-text mb-1">
+            {#if updateStatus.data?.updateAvailable}
+              Mercury {updateStatus.data.latest} available
+            {:else}
+              Mercury {updateStatus.data?.current}
+            {/if}
+          </div>
+          <div class="text-dim mb-2">
+            {updateStatus.data?.updateAvailable ? `You have ${updateStatus.data.current}` : "Up to date"}
+          </div>
+          <button
+            class="w-full flex items-center justify-center gap-1.5 rounded-lg border border-border-2 px-2 py-1.5 text-cyan hover:bg-panel disabled:opacity-60"
+            disabled={updating}
+            onclick={startUpdate}
+          >
+            <Download size={14} />
+            {updating ? "Updating..." : updateStatus.data?.updateAvailable ? "Update now" : "Reinstall latest"}
+          </button>
+          {#if updateOutput}
+            <pre class="mt-2 max-h-28 overflow-auto whitespace-pre-wrap text-[0.68rem] text-muted font-mono">{updateOutput}</pre>
+          {/if}
+        </div>
+      {/if}
+      <div class="text-[0.74rem] text-dim flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full inline-block"
+          style:background={connected ? "var(--color-green)" : "var(--color-dim)"}
+          style:box-shadow={connected ? "0 0 8px var(--color-green)" : "none"}></span>
+        {connected ? "live" : "offline"}
+      </div>
     </div>
   </aside>
 
