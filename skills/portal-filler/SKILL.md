@@ -26,7 +26,7 @@ used by `recruiter-outreach`.
 
 - **Chrome MCP** — `navigate_page`, `take_snapshot`, `fill`, `fill_form`,
   `click`, `upload_file`, `take_screenshot` (and `pipeline` to batch them).
-- **Mercury CLI** — `mercury answer`, `mercury application`, `mercury export`.
+- **Mercury CLI** — `mercury answer`, `mercury match`, `mercury application`, `mercury export`.
 - A reusable answer store populated via `mercury answer set` (see below).
 - Tailored artifacts on disk: the `.typ` resume and the cover letter.
 
@@ -85,22 +85,42 @@ Inspect the opportunity `link` host and the page DOM:
 ### 4. Generic fill (snapshot → label-match → fill → pause)
 
 1. `navigate_page` to the `link`, then `take_snapshot` to get the live form
-   tree with element uids.
-2. Match each visible form label to an `applicant_answers` key by
-   fuzzy/synonym matching (e.g. "Email address" → `email`, "Will you now or in
-   the future require sponsorship" → `requires_sponsorship`).
-3. Fill only **confident** matches with `fill` / `fill_form` (batch via
-   `pipeline`). Upload the resume PDF to the resume file field.
-4. **Leave unmatched or ambiguous fields empty** and collect their labels.
-5. **Never auto-fill EEO/demographic fields** (gender, veteran, disability) even
-   if stored — leave them for the human at review time.
-6. End with `take_snapshot` + `take_screenshot` and present a
-   "review these N fields before you submit" summary.
+   tree with element uids. Collect the visible field **labels**.
+2. Map labels to answer keys with the deterministic matcher — don't eyeball it:
+
+   ```
+   mercury match --labels '["Email *","Phone","Will you require sponsorship?", ...]'
+   ```
+
+   It joins the labels against your `applicant_answers` and returns a plan:
+
+   ```json
+   {
+     "matched":  [{ "label": "Email *", "key": "email",
+                    "value": "me@example.com", "confidence": 1, "reason": "exact" }],
+     "unfilled": [{ "label": "Phone", "skip": "no-stored-answer", "key": "phone" },
+                  { "label": "Gender", "skip": "eeo-human-only", "key": "eeo_gender" },
+                  { "label": "Favorite color", "skip": "no-match" }]
+   }
+   ```
+
+3. Fill **only** the `matched` entries with `fill` / `fill_form` (batch via
+   `pipeline`), keyed back to the snapshot uid for each label. Upload the resume
+   PDF to the resume file field.
+4. **Leave every `unfilled` field empty** and keep its list for the review
+   summary. The `skip` reason tells the user why:
+   - `no-stored-answer` — recognized, but you have no value stored (add one with
+     `mercury answer set` if you want it auto-filled next time).
+   - `eeo-human-only` — EEO/demographic; **never auto-filled**, human enters it.
+   - `no-match` / `ambiguous` — couldn't confidently map it; human handles it.
+5. `take_snapshot` + `take_screenshot` and present a "review these N fields
+   before you submit" summary.
 
 > [!WARNING]
 > Truthfulness guardrails carry over from `resume-tailor`: **never invent
-> answers** (work authorization, years of experience, EEO). Unknown or
-> ambiguous fields go to the unfilled list and are surfaced — never guessed.
+> answers** (work authorization, years of experience, EEO). The matcher already
+> refuses to fill EEO fields and anything with no stored value — respect its
+> `unfilled` list, don't fill those by hand from assumptions.
 
 ### 5. Persist + surface
 

@@ -36,6 +36,7 @@ Write API (used by skills):
   mercury application update --id <n> [--status --portal --external-url --fields --unfilled]
   mercury answer set --key <k> [--value --category]   Set a reusable application answer
   mercury answer list [--category <c>]                List reusable application answers
+  mercury match --labels '["Email",...]' [--threshold-pct N]   Map ATS form labels to stored answers
   mercury export --typ <file> --out <file.pdf>        Compile a Typst doc to PDF
   mercury activity log [--kind --skill --summary --payload]
 
@@ -118,6 +119,11 @@ async function main() {
     case "answer":
       await answerCmd(positionals[0] ?? "", flags);
       break;
+    case "match": {
+      const { matchCmd } = await import("./match.ts");
+      await matchCmd(flags);
+      break;
+    }
     case "export": {
       const { exportCmd } = await import("./export.ts");
       await exportCmd(flags);

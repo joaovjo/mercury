@@ -28,6 +28,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     label-match → fill → **pause for human review** (never auto-submits, mirrors
     `recruiter-outreach`'s `confirm_send`). EEO/demographic fields are stored but
     never auto-filled; unknown fields are surfaced, never guessed.
+  - **Generic label→answer matcher** (`mercury match --labels '[...]'`): a
+    deterministic, unit-tested mapper from live ATS form labels to stored
+    `applicant_answers` (exact → synonym → fuzzy with Levenshtein/token overlap).
+    Returns a `{matched, unfilled}` plan; EEO fields and fields with no stored
+    answer are surfaced in `unfilled`, never guessed. 11 `bun test` cases cover
+    the guardrails. The skill now calls it instead of eyeballing labels.
 
 
 

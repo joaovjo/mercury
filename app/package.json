@@ -14,7 +14,8 @@
     "embed": "bun run scripts/embed-assets.ts",
     "build:bin": "bun build src/cli/index.ts --compile --outfile dist/mercury",
     "build:targets": "bun run gen:version && bun run build:web && bun run embed && bun run scripts/build-targets.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0"
