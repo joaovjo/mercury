@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { parseFlags } from "./flags.ts";
 import { initCmd } from "./init.ts";
+import { setupCmd } from "./setup.ts";
 import { recruiterCmd } from "./recruiter.ts";
 import {
   jobCmd,
@@ -17,6 +18,7 @@ import { checkForUpdate, maybePrintUpdateNotice } from "../update-check.ts";
 const HELP = `mercury — AI-powered job search companion
 
 Usage:
+  mercury setup [--agent <id>] [--all] [--skills-dir <p>]  Install skills into your agent(s)
   mercury init                       Scaffold ~/.mercury/ + database
   mercury dashboard [--port N] [--no-open] [--provider opencode|claude-code]
   mercury import-journey <FILE.md>   Migrate a legacy JOURNEY.md into the db
@@ -62,6 +64,9 @@ async function main() {
   switch (cmd) {
     case "init":
       initCmd();
+      break;
+    case "setup":
+      setupCmd(flags);
       break;
     case "dashboard": {
       const { dashboardCmd } = await import("../server/index.ts");
