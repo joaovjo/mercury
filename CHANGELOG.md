@@ -27,7 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `skills/portal-filler/SKILL.md` scaffold: detect ATS → snapshot →
     label-match → fill → **pause for human review** (never auto-submits, mirrors
     `recruiter-outreach`'s `confirm_send`). EEO/demographic fields are stored but
-    never auto-filled; unknown fields are surfaced, never guessed.
+    never auto-filled; unknown fields are surfaced, never guessed. Now documents
+    real-world fill mechanics validated against a live Greenhouse form: React
+    input events, `intl-tel-input` phone reformatting, combobox dropdowns vs text
+    inputs, async S3-backed file-upload widgets (verify the attached filename),
+    and reCAPTCHA/SSO gates left to the human.
   - **Generic label→answer matcher** (`mercury match --labels '[...]'`): a
     deterministic, unit-tested mapper from live ATS form labels to stored
     `applicant_answers` (exact → synonym → fuzzy with Levenshtein/token overlap).
