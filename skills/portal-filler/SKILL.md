@@ -26,7 +26,7 @@ used by `recruiter-outreach`.
 
 - **Chrome MCP** — `navigate_page`, `take_snapshot`, `fill`, `fill_form`,
   `click`, `upload_file`, `take_screenshot` (and `pipeline` to batch them).
-- **Mercury CLI** — `mercury answer`, `mercury match`, `mercury application`, `mercury export`.
+- **Mercury CLI** — `mercury detect-portal`, `mercury answer`, `mercury match`, `mercury application`, `mercury export`.
 - A reusable answer store populated via `mercury answer set` (see below).
 - Tailored artifacts on disk: the `.typ` resume and the cover letter.
 
@@ -67,26 +67,50 @@ mercury export --typ ".mercury/tailored/{company}-{jobId}.typ" \
 The cover letter is uploaded as-is when the form has a file field, or pasted
 into a textarea when it has one.
 
-### 3. Detect the ATS
+### 3. Detect the ATS + load its adapter
 
-Inspect the opportunity `link` host and the page DOM:
+```
+mercury detect-portal --url "{link}"
+```
 
-| Host contains      | Portal       |
-|--------------------|--------------|
-| `greenhouse.io`    | `greenhouse` |
-| `lever.co`         | `lever`      |
-| `ashbyhq.com`      | `ashby`      |
-| anything else      | `generic`    |
+Returns the portal id plus its **known stable field selectors**, widget types,
+and quirk notes:
 
-> Per-ATS adapters (stable field maps for Greenhouse/Lever/Ashby) are a later
-> phase. Until then, use the generic snapshot-driven flow below for **all**
-> portals; record the detected `portal` so adapters can be layered on.
+```json
+{
+  "portal": "greenhouse",
+  "fields": [
+    { "key": "first_name", "selectors": ["#first_name"], "widget": "text" },
+    { "key": "email",      "selectors": ["#email"],      "widget": "text" },
+    { "key": "phone",      "selectors": ["#phone"],      "widget": "tel" },
+    { "key": "resume",     "selectors": ["#resume"],     "widget": "file" }
+  ],
+  "notes": ["...quirks: react-select dropdowns, async S3 upload, reCAPTCHA..."]
+}
+```
 
-### 4. Generic fill (snapshot → label-match → fill → pause)
+Adapter coverage (selectors verified against live forms):
+
+| Portal | Host | Stable fields keyed by | Resume | Dropdowns |
+|---|---|---|---|---|
+| `greenhouse` | `greenhouse.io` | ids (`#first_name`, `#email`, …) | async S3 upload | react-select |
+| `lever` | `lever.co` | `name` attrs (`name`, `email`, `org`, `urls[…]`) | real file input | native `<select>` |
+| `ashby` | `ashbyhq.com` | `#_systemfield_*` ids | file input | button/listbox |
+| `generic` | anything else | — (no static fields) | — | — |
+
+Use the adapter's `fields` to fill the **known core fields by selector** (most
+reliable), then run the generic matcher (step 4) for everything else — the
+per-posting custom questions the adapter deliberately doesn't map. For
+`generic`, skip straight to step 4.
+
+### 4. Fill (adapter selectors + generic match → fill → pause)
 
 1. `navigate_page` to the `link`, then `take_snapshot` to get the live form
    tree with element uids. Collect the visible field **labels**.
-2. Map labels to answer keys with the deterministic matcher — don't eyeball it:
+2. Fill the adapter's known `fields` first, by selector, honoring each
+   `widget` (see widget mechanics below).
+3. Map the **remaining** labels to answer keys with the deterministic matcher —
+   don't eyeball it:
 
    ```
    mercury match --labels '["Email *","Phone","Will you require sponsorship?", ...]'
@@ -104,16 +128,16 @@ Inspect the opportunity `link` host and the page DOM:
    }
    ```
 
-3. Fill **only** the `matched` entries with `fill` / `fill_form` (batch via
+4. Fill **only** the `matched` entries with `fill` / `fill_form` (batch via
    `pipeline`), keyed back to the snapshot uid for each label. Upload the resume
    PDF to the resume file field.
-4. **Leave every `unfilled` field empty** and keep its list for the review
+5. **Leave every `unfilled` field empty** and keep its list for the review
    summary. The `skip` reason tells the user why:
    - `no-stored-answer` — recognized, but you have no value stored (add one with
      `mercury answer set` if you want it auto-filled next time).
    - `eeo-human-only` — EEO/demographic; **never auto-filled**, human enters it.
    - `no-match` / `ambiguous` — couldn't confidently map it; human handles it.
-5. `take_snapshot` + `take_screenshot` and present a "review these N fields
+6. `take_snapshot` + `take_screenshot` and present a "review these N fields
    before you submit" summary.
 
 > [!WARNING]
@@ -122,25 +146,34 @@ Inspect the opportunity `link` host and the page DOM:
 > refuses to fill EEO fields and anything with no stored value — respect its
 > `unfilled` list, don't fill those by hand from assumptions.
 
-### 4a. Real-world fill mechanics (learned against a live Greenhouse form)
+### 4a. Widget mechanics (per `widget` type; learned against live forms)
 
-ATS forms are messier than a flat label list suggests. Handle these:
+ATS forms are messier than a flat label list suggests. The adapter's `widget`
+field tells you how to drive each control:
 
-- **Plain text/tel/email inputs** fill reliably. Set the value and dispatch
+- **`text` / `tel`** — plain inputs fill reliably. Set the value and dispatch
   `input` + `change` events (React-controlled inputs ignore a bare value set).
-- **Phone fields** are often an `intl-tel-input` widget that **reformats** the
-  number (e.g. `(+12) 34 5 6789-0000` → `+12 34 567890000`). The reformatted
-  value is correct — don't treat the difference as a failure.
-- **Dropdowns are comboboxes, not text inputs.** Many questions that look like
-  free-text (country of residence, "require sponsorship?", yes/no screeners) are
-  `Select...` comboboxes. You must click to open, then click the option — typing
-  a raw value may not register. Confirm the selected text after.
-- **File uploads are unreliable via a single `upload_file`.** Greenhouse/Lever
-  use async S3-backed widgets behind an "Attach" button and swap the underlying
-  `<input type=file>` out after selection. Click "Attach", upload, then
-  **verify the chosen filename is shown** before trusting it; if it didn't land,
-  tell the user to attach the PDF manually. (PDF is produced by `mercury export`.)
+  `tel` is often an `intl-tel-input` widget that **reformats** the number
+  (e.g. `(+12) 34 5 6789-0000` → `+12 34 567890000`); the reformatted value is
+  correct — don't treat the difference as a failure.
+- **`native-select`** (Lever dropdowns) — a real `<select>`: set value to the
+  matching option and dispatch `change`.
+- **`react-select`** (Greenhouse) / **`listbox`** (Ashby) — **not** text inputs.
+  Many questions that look free-text (country of residence, "require
+  sponsorship?", yes/no screeners) are comboboxes. Click to open, then click the
+  option — typing a raw value may not register. Confirm the selected text after.
+- **`file`** — uploads can be unreliable. Greenhouse uses an async S3-backed
+  widget behind an "Attach" button and swaps the underlying `<input type=file>`
+  out after selection; Lever (`#resume-upload-input`) and Ashby
+  (`#_systemfield_resume`) are plainer file inputs. Always click "Attach"/"Upload
+  File", upload, then **verify the chosen filename is shown** before trusting it;
+  if it didn't land, tell the user to attach the PDF manually. (PDF is produced
+  by `mercury export`.)
 - **reCAPTCHA / SSO** may gate submission — out of scope; leave for the human.
+
+Per-posting custom questions (Greenhouse `#question_*`, Lever
+`cards[uuid][fieldN]`, Ashby random-uuid ids) are **not** in the adapter — map
+them via `mercury match` and drive them by their widget type above.
 
 When something can't be filled programmatically, add it to the review summary as
 a "do this yourself" item rather than silently skipping it.

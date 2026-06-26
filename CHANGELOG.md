@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **`portal-filler` foundations (issue #7, Phases 1–2).** Groundwork for
+- **`portal-filler` foundations (issue #7, Phases 1–3).** Groundwork for
   autofilling external ATS application forms via Chrome MCP:
   - New `applicant_answers` table — a reusable, dashboard-editable store of
     canonical answers (`contact` / `eligibility` / `links` / `eeo` / `custom`),
@@ -41,6 +41,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     an incidental single-word collision (validated against a live GitLab
     Greenhouse form). 14 `bun test` cases cover the guardrails. The skill now
     calls it instead of eyeballing labels.
+  - **Per-ATS adapters** (`mercury detect-portal --url`): identifies the ATS
+    (Greenhouse / Lever / Ashby / generic) from the application URL and returns
+    its **known stable field selectors**, widget types (`text`/`tel`/
+    `native-select`/`react-select`/`listbox`/`file`), and quirk notes. Selectors
+    were verified against live Greenhouse (GitLab), Lever (Binance), and Ashby
+    forms; the Greenhouse selectors were re-checked live (all 5 resolve). The
+    skill fills known core fields by selector for reliability, then falls back to
+    the generic matcher for per-posting custom questions. 14 `bun test` cases
+    cover detection + field specs (25 portal-filler tests total).
 
 
 

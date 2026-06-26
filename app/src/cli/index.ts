@@ -37,6 +37,7 @@ Write API (used by skills):
   mercury answer set --key <k> [--value --category]   Set a reusable application answer
   mercury answer list [--category <c>]                List reusable application answers
   mercury match --labels '["Email",...]' [--threshold-pct N]   Map ATS form labels to stored answers
+  mercury detect-portal --url <application-url>       Identify the ATS + its known field selectors
   mercury export --typ <file> --out <file.pdf>        Compile a Typst doc to PDF
   mercury activity log [--kind --skill --summary --payload]
 
@@ -122,6 +123,11 @@ async function main() {
     case "match": {
       const { matchCmd } = await import("./match.ts");
       await matchCmd(flags);
+      break;
+    }
+    case "detect-portal": {
+      const { detectPortalCmd } = await import("./detect-portal.ts");
+      await detectPortalCmd(flags);
       break;
     }
     case "export": {
