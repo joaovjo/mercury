@@ -12,7 +12,7 @@
         color: #e4e4e7;
         padding: 40px 20px 80px;
     }
-    .wrap { max-width: 1400px; margin: 0 auto; }
+    .wrap { max-width: 1560px; margin: 0 auto; }
     h1 {
         text-align: center; font-size: 2.1rem; font-weight: 800; margin-bottom: 6px;
         background: linear-gradient(135deg, #0077b5, #6dd5ed);
@@ -54,9 +54,10 @@
     .feeder-flow b { color:#c4b5fd; }
 
     /* lanes */
-    .lanes { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:8px; align-items:start; }
+    .lanes { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-top:8px; align-items:stretch; }
 
-    .lane { border-radius:16px; padding:16px 14px 20px; background:#101014; border:1px solid #1f1f26; }
+    .lane { border-radius:16px; padding:16px 14px 20px; background:#101014; border:1px solid #1f1f26;
+        display:flex; flex-direction:column; }
     .lane-head { display:flex; align-items:center; gap:9px; margin-bottom:4px; }
     .lane-icon { width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
     .lane-title { font-weight:700; font-size:.95rem; line-height:1.1; }
@@ -80,10 +81,13 @@
     .scout .lane-icon { background:rgba(0,160,220,.12); } .scout .step-n { background:#00a0dc; } .scout .connector { background:#0a3a4d; } .scout .lane-title { color:#38bdf8; }
     .tailor .lane-icon { background:rgba(99,102,241,.14); } .tailor .step-n { background:#6366f1; } .tailor .connector { background:#272163; } .tailor .lane-title { color:#a5b4fc; }
     .out .lane-icon { background:rgba(245,158,11,.12); } .out .step-n { background:#f59e0b; } .out .connector { background:#4d3a0a; } .out .lane-title { color:#fbbf24; }
+    .fill .lane-icon { background:rgba(236,72,153,.12); } .fill .step-n { background:#ec4899; } .fill .connector { background:#4d1031; } .fill .lane-title { color:#f472b6; }
 
-    .result { margin-top:12px; background:#0d0d12; border:1px dashed #3a3a44; border-radius:9px;
+    .result { margin-top:auto; background:#0d0d12; border:1px dashed #3a3a44; border-radius:9px;
         padding:8px 11px; font-size:.74rem; color:#cbd5e1; display:flex; gap:7px; align-items:flex-start; }
     .result b { color:#e4e4e7; }
+    /* always leave at least this much gap between the last step and the pinned result */
+    .step-pad { min-height:14px; }
 
     /* persistence bar */
     .persist {
@@ -107,6 +111,7 @@
     .legend span { display:flex; align-items:center; gap:6px; }
     .dot { width:11px; height:11px; border-radius:3px; }
 
+    @media (max-width:1300px){ .lanes{grid-template-columns:repeat(3,1fr);} }
     @media (max-width:1100px){ .lanes{grid-template-columns:repeat(2,1fr);} .infra{grid-template-columns:1fr;} }
     @media (max-width:620px){ .lanes{grid-template-columns:1fr;} }
 </style>
@@ -122,7 +127,7 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6dd5ed" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>
             Request — in chat or from the dashboard's Launch tab
         </div>
-        <div class="d">"Improve my profile" · "Find backend roles in São Paulo" · "Grill me on recent work" · "Tailor my resume for these roles" · "Connect me with Uber recruiters"</div>
+        <div class="d">"Improve my profile" · "Find backend roles in São Paulo" · "Grill me on recent work" · "Tailor my resume for these roles" · "Connect me with Uber recruiters" · "Fill out this Greenhouse application"</div>
     </div>
     <div class="stem"></div>
     <div class="router">Agent matches intent → loads the right skill (via opencode or Claude Code over ACP)</div>
@@ -299,6 +304,45 @@
             </div></div>
 
             <div class="result">🤝 <span><b>Warm pipeline</b> — tracked outreach</span></div>
+        </div>
+
+        <!-- ===== PORTAL FILLER ===== -->
+        <div class="lane fill">
+            <div class="lane-head">
+                <div class="lane-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg></div>
+                <div class="lane-title">Portal Filler</div>
+                <span class="lane-num">⑤</span>
+            </div>
+            <div class="lane-trigger">"fill out this Greenhouse application for me"</div>
+
+            <div class="step"><div class="step-box"><div class="step-n">1</div>
+                <div class="step-title">Detect the ATS</div>
+                <div class="step-desc">Greenhouse / Lever / Ashby adapter + known field selectors</div>
+                <span class="tool db">mercury detect-portal</span>
+            </div></div>
+            <div class="connector"></div>
+
+            <div class="step"><div class="step-box"><div class="step-n">2</div>
+                <div class="step-title">Map form → answers</div>
+                <div class="step-desc">Snapshot labels matched to your stored answers; EEO never auto-filled</div>
+                <span class="tool db">mercury match</span>
+            </div></div>
+            <div class="connector"></div>
+
+            <div class="step"><div class="step-box"><div class="step-n">3</div>
+                <div class="step-title">Fill + upload, then pause</div>
+                <div class="step-desc">Fills fields + resume PDF; <b>never submits</b> — you review &amp; send</div>
+                <span class="tool pw">Chrome MCP · fill/upload</span>
+            </div></div>
+            <div class="connector"></div>
+
+            <div class="step"><div class="step-box"><div class="step-n">4</div>
+                <div class="step-title">Track status</div>
+                <div class="step-desc">draft → filled → submitted; surfaced in the hub</div>
+                <span class="tool db">mercury application update</span>
+            </div></div>
+
+            <div class="result">🚀 <span><b>Application filled</b> — ready for your review</span></div>
         </div>
     </div>
 
