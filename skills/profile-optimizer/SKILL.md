@@ -106,8 +106,15 @@ Capture the profile metrics + computed score so the dashboard can chart progress
 mercury metric record \
   --search-appearances {N} --profile-views {N} \
   --post-impressions {N} --connections {N} \
-  --score {0-100} --breakdown '{"openToWork":true,"headline":"strong",...}'
+  --score {0-100} \
+  --breakdown '{"openToWork":"recruiters-only","headline":"strong","location":"São Paulo","topSkills":"strong","languages":"set","projects":"4 added","about":"strong","connections":"weak (<500)"}'
 ```
+
+The `--breakdown` is a JSON object of `{signal: status}` pairs — one per audited
+signal from step 1's table. The dashboard renders each as a labeled pill (Overview
++ Profile sections), color-coded: greenish for strong/good/set/done values, red for
+weak/missing/empty/none, neutral otherwise. Use concise, human-readable status
+strings so the pills read well.
 
 Log the optimization session:
 ```

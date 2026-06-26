@@ -157,6 +157,8 @@ function handleApi(path: string): Response {
       return Response.json(queries.activity());
     case "/api/profile":
       return Response.json(queries.profile());
+    case "/api/profile-snapshot":
+      return Response.json(queries.profileSnapshot());
     default:
       return new Response("not found", { status: 404 });
   }
