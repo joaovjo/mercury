@@ -88,7 +88,12 @@ function scoreSpec(norm: string, spec: KeySpec): Candidate | null {
       return { spec, confidence: 1.0, reason: "exact" }; // can't beat exact
     }
     if (norm.includes(s) || s.includes(norm)) {
-      best = pickBetter(best, { spec, confidence: 0.9, reason: "synonym" });
+      // Weight by synonym specificity: a multi-word phrase ("require
+      // sponsorship") is a far stronger signal than an incidental single-word
+      // hit ("location" inside a long sentence). Caps below the 1.0 exact tier.
+      const words = s.split(" ").filter(Boolean).length;
+      const confidence = Math.min(0.98, 0.86 + 0.04 * (words - 1));
+      best = pickBetter(best, { spec, confidence, reason: "synonym" });
       continue;
     }
     // Fuzzy: token overlap (Jaccard) and a normalized edit-distance ratio.
@@ -117,6 +122,11 @@ function pickBetter(a: Candidate | null, b: Candidate): Candidate {
   return b.confidence > a.confidence ? b : a;
 }
 
+/** Match-quality tier for ranking: exact beats synonym beats fuzzy. */
+function tier(reason: MatchReason): number {
+  return reason === "exact" ? 3 : reason === "synonym" ? 2 : 1;
+}
+
 export interface MatchOptions {
   /** Keys the user actually has a stored value for: key → value. */
   answers: Record<string, string>;
@@ -139,7 +149,12 @@ export function matchLabels(labels: string[], opts: MatchOptions): MatchResult {
     const candidates = KEY_SPECS.map((spec) => scoreSpec(norm, spec)).filter(
       (c): c is Candidate => c !== null && c.confidence >= threshold,
     );
-    candidates.sort((a, b) => b.confidence - a.confidence);
+    // Rank by tier (exact > synonym > fuzzy) first, then confidence, so a
+    // strong match can't be derailed by a numerically-close fuzzy collision
+    // (e.g. "...sponsorship...current location" must not lose to `location`).
+    candidates.sort(
+      (a, b) => tier(b.reason) - tier(a.reason) || b.confidence - a.confidence,
+    );
 
     const top = candidates[0];
     if (!top) {
@@ -147,9 +162,16 @@ export function matchLabels(labels: string[], opts: MatchOptions): MatchResult {
       continue;
     }
 
-    // Ambiguous when the runner-up is a *different* key within 0.1 confidence.
+    // Ambiguous only when a *different* key ties in the SAME tier within a tight
+    // window. Synonym specificity (phrase length) already separates a strong
+    // multi-word match from an incidental single-word collision; this catches
+    // genuine ties (two equally-specific synonyms).
     const runnerUp = candidates.find((c) => c.spec.key !== top.spec.key);
-    if (runnerUp && top.confidence - runnerUp.confidence < 0.1) {
+    if (
+      runnerUp &&
+      tier(runnerUp.reason) === tier(top.reason) &&
+      top.confidence - runnerUp.confidence < 0.03
+    ) {
       unfilled.push({ label, skip: "ambiguous", key: top.spec.key });
       continue;
     }
