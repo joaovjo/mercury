@@ -7,7 +7,7 @@ import { ensureHome, paths } from "../paths.ts";
 import { db } from "../db/index.ts";
 import { queries } from "./queries.ts";
 import { SessionManager } from "../acp/session.ts";
-import { PROVIDERS } from "../acp/providers.ts";
+import { PROVIDERS, listProviderModels } from "../acp/providers.ts";
 import { loadConfig } from "../paths.ts";
 import { EMBEDDED_ASSETS } from "./assets.gen.ts";
 
@@ -76,8 +76,16 @@ export async function dashboardCmd(flags: Flags): Promise<void> {
         // ACP endpoints (Phase 3) — launch skills via the agent.
         if (path === "/api/acp/providers") {
           const cfg = loadConfig();
+          const providerEntries = await Promise.all(
+            Object.values(PROVIDERS).map(async (p) => ({
+              id: p.id,
+              displayName: p.displayName,
+              models: await listProviderModels(p.id),
+              defaultModel: p.defaultModel,
+            })),
+          );
           return Response.json({
-            providers: Object.values(PROVIDERS).map((p) => ({ id: p.id, displayName: p.displayName })),
+            providers: providerEntries,
             default: cfg.provider ?? "opencode",
           });
         }
@@ -86,9 +94,10 @@ export async function dashboardCmd(flags: Flags): Promise<void> {
             provider?: string;
             skill?: string;
             params?: Record<string, string>;
+            model?: string;
           };
           // Fire and forget — progress streams over the WebSocket.
-          void acp.run(body.provider ?? "opencode", body.skill ?? "", body.params ?? {});
+          void acp.run(body.provider ?? "opencode", body.skill ?? "", body.params ?? {}, body.model);
           return Response.json({ ok: true });
         }
         if (path === "/api/acp/cancel" && req.method === "POST") {

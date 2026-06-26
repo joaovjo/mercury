@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import type { Subprocess } from "bun";
-import { getProvider } from "./providers.ts";
+import { getProvider, type AcpProviderCommand } from "./providers.ts";
 
 /**
  * Minimal Agent Client Protocol (ACP) client.
@@ -48,17 +48,19 @@ export class AcpClient {
     private providerId: string,
     private cwd: string,
     private events: AcpEvents = {},
+    private model?: string,
   ) {}
 
   /** Spawn the agent and run the initialize handshake + create a session. */
   async start(): Promise<void> {
     const provider = getProvider(this.providerId);
-    const { cmd } = provider.command(this.cwd);
-    this.proc = Bun.spawn(cmd, {
+    const spawnOpts: AcpProviderCommand = provider.command(this.cwd, this.model);
+    this.proc = Bun.spawn(spawnOpts.cmd, {
       cwd: this.cwd,
       stdin: "pipe",
       stdout: "pipe",
       stderr: "pipe",
+      env: spawnOpts.env ? { ...process.env, ...spawnOpts.env } : undefined,
     });
 
     this.readStdout();

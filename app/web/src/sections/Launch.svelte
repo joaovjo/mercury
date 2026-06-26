@@ -3,6 +3,7 @@
 
   let providers = $state([]);
   let provider = $state("opencode");
+  let model = $state("");
   let running = $state(false);
   let log = $state([]); // { kind, text }
 
@@ -50,6 +51,17 @@
     return unsub;
   });
 
+  // reset model when provider changes and current model isn't in new provider's list
+  let prevProvider;
+  $effect(() => {
+    const prev = prevProvider;
+    prevProvider = provider;
+    if (prev === provider) return;
+    const cur = providers.find((p) => p.id === provider);
+    if (!cur || !cur.models || !cur.models.length) { model = ""; return; }
+    if (!model || !cur.models.includes(model)) model = cur.models[0];
+  });
+
   function push(kind, text, append = false) {
     if (append && log.length && log[log.length - 1].kind === "msg") {
       log[log.length - 1] = { kind, text: log[log.length - 1].text + text };
@@ -62,8 +74,10 @@
   async function launch() {
     log = [];
     const params = { query, location, company, jobIds };
+    const selectedProvider = providers.find((p) => p.id === provider);
+    const selectedModel = selectedProvider?.models?.includes(model) ? model : "";
     try {
-      await post("acp/run", { provider, skill, params });
+      await post("acp/run", { provider, model: selectedModel, skill, params });
     } catch (e) {
       push("err", e.message);
     }
@@ -92,6 +106,13 @@
         {#each providers as p}<option value={p.id}>{p.displayName}</option>{/each}
       </select>
     </label>
+    <label>Model
+      <select bind:value={model} disabled={(providers.find(p => p.id === provider)?.models ?? []).length === 0}>
+        {#each (providers.find(p => p.id === provider)?.models ?? []) as m}
+          <option value={m}>{m}</option>
+        {/each}
+      </select>
+    </label>
     <label>Skill
       <select bind:value={skill}>
         {#each skills as s}<option value={s.id}>{s.label}</option>{/each}
@@ -116,7 +137,7 @@
   </div>
 
   <div style="margin-top:14px;display:flex;gap:10px">
-    <button class="go" onclick={launch} disabled={running}>{running ? "Running…" : "Launch"}</button>
+    <button class="go" onclick={launch} disabled={running || (providers.find(p => p.id === provider)?.models ?? []).length === 0}>{running ? "Running…" : "Launch"}</button>
     {#if running}<button class="cancel" onclick={cancel}>Cancel</button>{/if}
   </div>
 </div>
@@ -135,7 +156,7 @@
 </div>
 
 <style>
-  .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
   label { display:flex; flex-direction:column; gap:6px; font-size:.78rem; color:var(--dim); }
   input, select {
     background:var(--panel-2); border:1px solid var(--border-2); border-radius:8px;

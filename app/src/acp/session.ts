@@ -48,7 +48,7 @@ export class SessionManager {
     return this.running;
   }
 
-  async run(providerId: string, skill: string, params: Record<string, string>): Promise<void> {
+  async run(providerId: string, skill: string, params: Record<string, string>, model?: string): Promise<void> {
     if (this.running) {
       this.sink({ type: "acp-error", message: "A skill run is already in progress." });
       return;
@@ -70,7 +70,7 @@ export class SessionManager {
         this.sink({ type: "acp-exit", code });
         this.running = false;
       },
-    });
+    }, model);
 
     try {
       this.sink({ type: "acp-status", status: "starting", provider: providerId, skill });
