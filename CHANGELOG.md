@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Dashboard "shows nothing then suddenly shows results" bug.** Every section
+  initialized to an empty list with no loading flag and swallowed fetch errors,
+  so the "run the skill" empty state rendered immediately until the async fetch
+  resolved — and a failed fetch looked identical to genuinely empty. Sections now
+  use an explicit loading / error / empty / data state machine: a loading
+  placeholder shows first, real fetch errors surface with a Retry button, and the
+  "run the skill" CTA appears only when a table is truly empty.
+
+### Changed
+
+- **Dashboard live-updates are now table-scoped.** A DB change refreshes only the
+  affected section (+ Overview badges) instead of refetching every mounted
+  section. The sidebar "live/offline" dot now reflects the real WebSocket state.
+- **Dashboard UI modernized** to Tailwind v4 with Bits UI headless primitives and
+  Lucide icons (replacing the unicode-glyph nav). Dark theme and colors preserved.
+
 ## [0.4.0] - 2026-06-26
 
 ### Added
