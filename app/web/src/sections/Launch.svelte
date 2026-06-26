@@ -75,6 +75,7 @@
 
   const skills = [
     { id: "job-scout", label: "Job Scout" },
+    { id: "experience-bank", label: "Experience Bank (grill me)" },
     { id: "recruiter-outreach", label: "Recruiter Outreach" },
     { id: "profile-optimizer", label: "Profile Optimizer" },
     { id: "resume-tailor", label: "Resume Tailor" },
@@ -107,8 +108,10 @@
       <label>Location<input bind:value={location} /></label>
     {:else if skill === "resume-tailor"}
       <label>Job IDs (comma-sep)<input bind:value={jobIds} placeholder="4393940374, 3969556398" /></label>
-    {:else}
+    {:else if skill === "profile-optimizer"}
       <span class="dim" style="font-size:.85rem;align-self:center">No parameters — audits your profile.</span>
+    {:else if skill === "experience-bank"}
+      <span class="dim" style="font-size:.85rem;align-self:center">No parameters — interviews you about new achievements (interactive).</span>
     {/if}
   </div>
 

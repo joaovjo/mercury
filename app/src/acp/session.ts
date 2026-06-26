@@ -17,6 +17,8 @@ export function buildSkillPrompt(skill: string, params: Record<string, string>):
       }${params.location ? ` who hire in ${params.location}` : ""}, prioritize them, and (with my confirmation) send connection requests. Record each via \`mercury recruiter add\`.`;
     case "profile-optimizer":
       return `Use the profile-optimizer skill. Audit my LinkedIn profile, report ranked pitfalls, and record the metrics + score via \`mercury metric record\`.`;
+    case "experience-bank":
+      return `Use the experience-bank skill ("grill me"). Load my existing bank, base resume, and LinkedIn profile first, then interview me about new achievements I don't already have captured. Store tagged entries in \`.mercury/experience/\` and log the run via \`mercury activity log\`.`;
     case "resume-tailor":
       return `Use the resume-tailor skill. Tailor my resume for these roles: ${
         params.jobIds ?? "(none provided)"

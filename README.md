@@ -7,6 +7,9 @@ Mercury is a collection of **AI agent skills** that automate your LinkedIn job s
 ## The Pipeline
 
 ```
+                         experience-bank  (periodic, occasional)
+                                │ read-only achievement pool
+                                ▼
 profile-optimizer → job-scout → resume-tailor → recruiter-outreach
      fix your         find the      tailor your      reach the
      profile          roles          resume          recruiters
@@ -18,7 +21,8 @@ profile-optimizer → job-scout → resume-tailor → recruiter-outreach
 |---|---|
 | **profile-optimizer** | Audits your LinkedIn profile against recruiter-search signals and fixes gaps (Open to Work, headline, location, skills, languages, projects, About, experience) |
 | **job-scout** | Searches LinkedIn Jobs by company/location/work-type, pulls full details, and presents a prioritized shortlist with fit assessment |
-| **resume-tailor** | Takes your base resume + scouted roles and produces role-tailored versions with gap analysis, ATS keyword alignment, and cover letters |
+| **experience-bank** | "Grill me" — periodically interviews you about new achievements and stores them as a tagged, reusable pool in `.mercury/experience/` that resume-tailor draws from. Run occasionally, not per application |
+| **resume-tailor** | Takes your base resume + experience bank + scouted roles and produces role-tailored versions with gap analysis, ATS keyword alignment, and cover letters |
 | **recruiter-outreach** | Finds technical recruiters at target companies, prioritizes by proximity/mutuals, and sends tailored connection requests |
 
 See [`diagram.html`](diagram.html) for a visual of how the skills work together.
@@ -71,6 +75,9 @@ Mercury stores all job search artifacts in a `.mercury/` folder in your workspac
 .mercury/
 ├── base/
 │   └── resume.typ              # Your canonical base resume
+├── experience/
+│   ├── {slug}.md               # One tagged achievement per entry (experience-bank)
+│   └── index.md                # Rollup for quick scanning
 ├── tailored/
 │   ├── airbnb-4393940374.typ   # Tailored per role (company-jobId)
 │   ├── doordash-3969556398.typ
@@ -167,12 +174,20 @@ The agent loads these skills automatically when your request matches their descr
 - Assess fit (Strong / Good / Stretch) based on your profile
 - Flag diversity-scoped roles, staffing aggregators, and external ATS friction
 
+### Experience Bank
+- "Grill me" — STAR-style interview that probes for impact, metrics, scope, and tech
+- Seeds from your existing bank + base resume + LinkedIn profile, so it only asks about gaps and new material
+- Stores tagged entries in `.mercury/experience/` (skills, tech, domain, role-type, metrics)
+- Incremental + idempotent — run periodically (quarterly/after shipping), never re-grills what it already has
+- Truthful by construction — structures real stories, never invents
+
 ### Resume Tailor
-- Parse your base resume (Typst/MD/PDF/txt) + LinkedIn profile data
+- Parse your base resume (Typst/MD/PDF/txt) + experience bank + LinkedIn profile data
+- Pulls role-relevant experience-bank entries even when they aren't on the short base resume
 - Batch-tailor to N scouted roles in one pass
 - Produce ATS-keyword-aligned Typst output per role
 - Generate full cover letters per role
-- Gap/match analysis showing what's strong, what's a stretch, what's missing
+- Gap/match analysis showing what's strong, what's a stretch, what's in your bank, what's missing
 - All outputs stored in `.mercury/` with full run logs
 
 ### Recruiter Outreach
@@ -197,6 +212,8 @@ The agent loads these skills automatically when your request matches their descr
 skills/
 ├── job-scout/
 │   └── SKILL.md
+├── experience-bank/
+│   └── SKILL.md
 ├── profile-optimizer/
 │   └── SKILL.md
 ├── recruiter-outreach/
@@ -209,7 +226,7 @@ skills/
 
 ## Keywords
 
-LinkedIn automation, job search AI, recruiter outreach, resume tailoring, profile optimization, ATS optimization, LinkedIn MCP, AI job hunting, career toolkit, LinkedIn bot, job scout, cover letter generator, LinkedIn skills for AI agents
+LinkedIn automation, job search AI, recruiter outreach, resume tailoring, profile optimization, experience bank, achievement tracking, ATS optimization, LinkedIn MCP, AI job hunting, career toolkit, LinkedIn bot, job scout, cover letter generator, LinkedIn skills for AI agents
 
 ## License
 
