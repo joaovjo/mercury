@@ -20,6 +20,7 @@ const HELP = `mercury — AI-powered job search companion
 Usage:
   mercury setup [--agent <id>] [--all] [--skills-dir <p>]  Install skills into your agent(s)
   mercury init                       Scaffold ~/.mercury/ + database
+  mercury update [--force]          Update Mercury to the latest release
   mercury dashboard [--port N] [--no-open] [--provider opencode|claude-code]
   mercury import-journey <FILE.md>   Migrate a legacy JOURNEY.md into the db
 
@@ -41,6 +42,7 @@ Options:
 async function main() {
   const argv = process.argv.slice(2);
   const cmd = argv[0];
+  const rest = argv.slice(1);
 
   if (!cmd || cmd === "-h" || cmd === "--help") {
     console.log(HELP);
@@ -53,8 +55,13 @@ async function main() {
     if (notice) console.error("\n" + notice);
     return;
   }
+  if (cmd === "update") {
+    const { updateCmd } = await import("./update.ts");
+    const { flags } = parseFlags(rest);
+    await updateCmd(flags);
+    return;
+  }
 
-  const rest = argv.slice(1);
   const { positionals, flags } = parseFlags(rest);
 
   // Kick off the update check concurrently with the command so the network

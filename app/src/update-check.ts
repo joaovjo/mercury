@@ -126,6 +126,19 @@ async function resolveLatest(): Promise<string | null> {
   return null;
 }
 
+export async function getUpdateStatus(): Promise<{
+  current: string;
+  latest: string | null;
+  updateAvailable: boolean;
+}> {
+  const latest = await resolveLatest();
+  return {
+    current: VERSION,
+    latest,
+    updateAvailable: latest ? isNewer(latest, VERSION) : false,
+  };
+}
+
 /**
  * Returns a one-line notice string if a newer version is available, else null.
  * Safe to call from any command; never throws.

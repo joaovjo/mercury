@@ -35,7 +35,6 @@ Mercury is a collection of **AI agent skills** that automate your LinkedIn job s
 curl -fsSL https://raw.githubusercontent.com/Daniel-Boll/mercury/main/bootstrap.sh | bash
 
 mercury setup        # copy skills into your detected agents (opencode, Claude Code, …)
-mercury init         # scaffold ~/.mercury/ + database
 mercury dashboard    # open the hub in your browser
 ```
 
@@ -160,6 +159,7 @@ curl -fsSL https://raw.githubusercontent.com/Daniel-Boll/mercury/main/bootstrap.
 ```
 
 The one-liner installs (or updates) Mercury and copies the skills:
+
 - detects your OS/arch and **downloads a prebuilt binary** from the latest [GitHub Release](https://github.com/Daniel-Boll/mercury/releases) (SHA256-verified) → `~/.local/bin/mercury` — no build, just `curl`;
 - copies the skills into detected agent dirs (`~/.config/opencode/skills`, `~/.claude/skills`);
 - **falls back to a source build** with [Bun](https://bun.sh) if no prebuilt binary matches your platform.
@@ -199,26 +199,29 @@ For the **Launch** tab you also need an ACP-capable agent on PATH: `opencode`
 
 The agent loads these skills automatically when your request matches their description. Examples:
 
-- *"Audit my LinkedIn profile and help me get more recruiter messages"* → loads `profile-optimizer`
-- *"Find backend engineer roles at DoorDash and Airbnb in São Paulo"* → loads `job-scout`
-- *"Tailor my resume for these 3 roles I scouted"* → loads `resume-tailor`
-- *"Find recruiters at Uber who hire in Brazil and connect with them"* → loads `recruiter-outreach`
+- _"Audit my LinkedIn profile and help me get more recruiter messages"_ → loads `profile-optimizer`
+- _"Find backend engineer roles at DoorDash and Airbnb in São Paulo"_ → loads `job-scout`
+- _"Tailor my resume for these 3 roles I scouted"_ → loads `resume-tailor`
+- _"Find recruiters at Uber who hire in Brazil and connect with them"_ → loads `recruiter-outreach`
 
 ## What Mercury Can Do
 
 ### Profile Optimizer
+
 - Pull full profile analytics (search appearances, views, impressions)
 - Identify specific pitfalls ranked by recruiter-search impact
 - Edit via browser automation: Open to Work (recruiter-only), headline, location, top skills, languages, projects, About section, experience descriptions
 - Remove internal-mobility cards that signal "not looking"
 
 ### Job Scout
+
 - Search by company + location + work type + seniority
 - Get full job descriptions with requirements and compensation
 - Assess fit (Strong / Good / Stretch) based on your profile
 - Flag diversity-scoped roles, staffing aggregators, and external ATS friction
 
 ### Experience Bank
+
 - "Grill me" — STAR-style interview that probes for impact, metrics, scope, and tech
 - Seeds from your existing bank + base resume + LinkedIn profile, so it only asks about gaps and new material
 - Stores tagged entries in `.mercury/experience/` (skills, tech, domain, role-type, metrics)
@@ -226,6 +229,7 @@ The agent loads these skills automatically when your request matches their descr
 - Truthful by construction — structures real stories, never invents
 
 ### Resume Tailor
+
 - Parse your base resume (Typst/MD/PDF/txt) + experience bank + LinkedIn profile data
 - Pulls role-relevant experience-bank entries even when they aren't on the short base resume
 - Batch-tailor to N scouted roles in one pass
@@ -235,6 +239,7 @@ The agent loads these skills automatically when your request matches their descr
 - All outputs stored in `.mercury/` with full run logs
 
 ### Recruiter Outreach
+
 - Look up company URN IDs (required for LinkedIn's people search filter)
 - Find technical recruiters/sourcers at target companies in your region
 - Prioritize by: same city > 2nd-degree > mutual connections > relevant title
