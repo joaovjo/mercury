@@ -72,73 +72,116 @@
   ];
 
   let ov = $derived(overview.status === "ready" ? overview.data : null);
+  let activeLabel = $derived(nav.find((n) => n.id === active)?.label ?? "");
+  // Show the update affordance as a full card only when an update is actually
+  // available; when up-to-date we collapse to a tiny muted version line.
+  let updateAvailable = $derived(
+    updateStatus.status === "ready" && updateStatus.data?.updateAvailable
+  );
 </script>
 
-<div class="grid grid-cols-[220px_1fr] min-h-screen">
-  <aside class="relative bg-panel border-r border-border px-3.5 py-[22px] sticky top-0 h-screen">
-    <div class="grad text-2xl font-extrabold mb-7 pl-2">Mercury</div>
-    {#each nav as item}
-      {@const Icon = item.icon}
-      <button
-        class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[9px] text-[0.92rem] font-medium border
-               {active === item.id
-                 ? 'bg-panel-2 text-text border-border-2'
-                 : 'text-muted border-transparent hover:bg-panel-2 hover:text-text'}"
-        onclick={() => (active = item.id)}
+<div class="flex h-screen overflow-hidden">
+  <!-- Sidebar -->
+  <aside class="hidden md:flex flex-col w-64 shrink-0 bg-panel border-r border-border-2 p-4">
+    <!-- Brand -->
+    <div class="flex items-center gap-3 px-3 py-4 mb-4">
+      <div
+        class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+        style="background: linear-gradient(135deg, #7170ff, #5e6ad2); box-shadow: 0 2px 10px rgba(113,112,255,0.4);"
       >
-        <Icon size={17} strokeWidth={2} />
-        <span>{item.label}</span>
-        {#if item.id === "recruiters" && ov}<span class="ml-auto text-[0.72rem] text-dim">{ov.recruiters}</span>{/if}
-        {#if item.id === "interviews" && ov}<span class="ml-auto text-[0.72rem] text-dim">{ov.interviews}</span>{/if}
-        {#if item.id === "jobs" && ov}<span class="ml-auto text-[0.72rem] text-dim">{ov.jobs}</span>{/if}
-      </button>
-    {/each}
-    <div class="absolute bottom-[18px] left-3.5 right-3.5 space-y-3">
-      {#if updateStatus.status === "ready"}
+        <Rocket size={17} strokeWidth={2.2} class="text-white" />
+      </div>
+      <div class="leading-tight">
+        <h1 class="text-[1.05rem] font-[590] tracking-[-0.24px] text-text">Mercury</h1>
+        <p class="text-[0.72rem] text-dim">AI Job Companion</p>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 flex flex-col gap-1 overflow-y-auto">
+      {#each nav as item}
+        {@const Icon = item.icon}
+        <button
+          class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[0.875rem] transition-colors
+                 {active === item.id
+                   ? 'bg-white/[0.05] text-text font-[590]'
+                   : 'text-muted font-[510] hover:text-text hover:bg-white/[0.02]'}"
+          onclick={() => (active = item.id)}
+        >
+          <Icon size={18} strokeWidth={2} class={active === item.id ? "text-cyan" : ""} />
+          <span>{item.label}</span>
+          {#if item.id === "recruiters" && ov}<span class="ml-auto text-[0.72rem] text-faint">{ov.recruiters}</span>{/if}
+          {#if item.id === "interviews" && ov}<span class="ml-auto text-[0.72rem] text-faint">{ov.interviews}</span>{/if}
+          {#if item.id === "jobs" && ov}<span class="ml-auto text-[0.72rem] text-faint">{ov.jobs}</span>{/if}
+        </button>
+      {/each}
+    </nav>
+
+    <!-- Footer: update status + live indicator -->
+    <div class="mt-auto pt-4 border-t border-border-2 space-y-3">
+      {#if updateAvailable}
         <div class="rounded-xl border border-border bg-panel-2 p-3 text-[0.76rem]">
-          <div class="font-semibold text-text mb-1">
-            {#if updateStatus.data?.updateAvailable}
-              Mercury {updateStatus.data.latest} available
-            {:else}
-              Mercury {updateStatus.data?.current}
-            {/if}
-          </div>
-          <div class="text-dim mb-2">
-            {updateStatus.data?.updateAvailable ? `You have ${updateStatus.data.current}` : "Up to date"}
-          </div>
+          <div class="font-[590] text-text mb-1">Mercury {updateStatus.data.latest} available</div>
+          <div class="text-dim mb-2">You have {updateStatus.data.current}</div>
           <button
-            class="w-full flex items-center justify-center gap-1.5 rounded-lg border border-border-2 px-2 py-1.5 text-cyan hover:bg-panel disabled:opacity-60"
+            class="w-full flex items-center justify-center gap-1.5 rounded-lg border border-border px-2 py-1.5 text-cyan hover:bg-white/[0.05] disabled:opacity-60"
             disabled={updating}
             onclick={startUpdate}
           >
             <Download size={14} />
-            {updating ? "Updating..." : updateStatus.data?.updateAvailable ? "Update now" : "Reinstall latest"}
+            {updating ? "Updating..." : "Update now"}
           </button>
           {#if updateOutput}
             <pre class="mt-2 max-h-28 overflow-auto whitespace-pre-wrap text-[0.68rem] text-muted font-mono">{updateOutput}</pre>
           {/if}
         </div>
+      {:else if updateStatus.status === "ready"}
+        <div class="text-[0.7rem] text-faint px-1">Mercury {updateStatus.data?.current}</div>
       {/if}
-      <div class="text-[0.74rem] text-dim flex items-center gap-1.5">
+      <div class="text-[0.74rem] text-dim flex items-center gap-1.5 px-1">
         <span class="w-2 h-2 rounded-full inline-block"
-          style:background={connected ? "var(--color-green)" : "var(--color-dim)"}
+          style:background={connected ? "var(--color-green)" : "var(--color-faint)"}
           style:box-shadow={connected ? "0 0 8px var(--color-green)" : "none"}></span>
         {connected ? "live" : "offline"}
       </div>
     </div>
   </aside>
 
-  <main class="px-9 pt-[30px] pb-20 max-w-[1180px]">
-    {#if active === "overview"}<Overview {overview} onnav={(id) => (active = id)} />
-    {:else if active === "profile"}<Profile />
-    {:else if active === "search"}<Search />
-    {:else if active === "launch"}<Launch />
-    {:else if active === "recruiters"}<Recruiters />
-    {:else if active === "jobs"}<Jobs />
-    {:else if active === "applications"}<Applications />
-    {:else if active === "answers"}<Answers />
-    {:else if active === "interviews"}<Interviews />
-    {:else if active === "activity"}<Activity />
-    {/if}
-  </main>
+  <!-- Main content -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <!-- Top app bar -->
+    <header
+      class="flex items-center justify-between px-6 py-3 sticky top-0 z-30 w-full border-b border-border-2"
+      style="background: rgba(8,9,10,0.8); backdrop-filter: blur(12px);"
+    >
+      <div class="flex items-center text-[0.8rem] font-[510] text-dim">
+        <span>Workspace</span>
+        <span class="mx-2 text-white/10">/</span>
+        <span class="text-muted">{activeLabel}</span>
+      </div>
+      <div class="flex items-center gap-1.5 text-[0.74rem] text-dim">
+        <span class="w-2 h-2 rounded-full inline-block"
+          style:background={connected ? "var(--color-green)" : "var(--color-faint)"}
+          style:box-shadow={connected ? "0 0 8px var(--color-green)" : "none"}></span>
+        {connected ? "live" : "offline"}
+      </div>
+    </header>
+
+    <!-- Scroll canvas -->
+    <main class="flex-1 overflow-y-auto px-6 md:px-10 lg:px-12 pt-8 pb-20">
+      <div class="max-w-[1200px] mx-auto">
+        {#if active === "overview"}<Overview {overview} onnav={(id) => (active = id)} />
+        {:else if active === "profile"}<Profile />
+        {:else if active === "search"}<Search />
+        {:else if active === "launch"}<Launch />
+        {:else if active === "recruiters"}<Recruiters />
+        {:else if active === "jobs"}<Jobs />
+        {:else if active === "applications"}<Applications />
+        {:else if active === "answers"}<Answers />
+        {:else if active === "interviews"}<Interviews />
+        {:else if active === "activity"}<Activity />
+        {/if}
+      </div>
+    </main>
+  </div>
 </div>

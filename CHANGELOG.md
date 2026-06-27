@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Dashboard redesign — Linear aesthetic.** Full visual overhaul of the local
+  dashboard to a dark-native, Linear-inspired theme:
+  - New design tokens in `app.css`: marketing-black canvas (`#08090a`), panel
+    (`#0f1011`) and elevated-surface (`#191a1b`) luminance steps, semi-transparent
+    white borders, and a single chromatic accent — brand indigo `#5e6ad2` /
+    violet `#7170ff`. Inter Variable is now bundled locally (no CDN) with the
+    `cv01`/`ss03` OpenType features and Linear's signature 510 weight.
+  - **Shell**: sidebar gains a gradient logo tile + "AI Job Companion" tagline
+    and clearer active/hover nav states; a new sticky top app bar shows a
+    `Workspace / {section}` breadcrumb and the live-connection indicator.
+  - **Overview** rebuilt as a bento grid with a hero Profile Score (large
+    display number + progress bar), accent-tinted Interviews card, wide Jobs
+    Saved row, and a two-column Profile Breakdown / Pipeline Health section.
+  - **Recruiters** kanban: column panels with count pills, per-status left
+    accent bars, and a highlighted "Interviewing" column.
+  - **Applications**: elevated table with company letter-tiles, portal/status/
+    file chips and status dots; Filter / New Application / pager are present as
+    visual shells (wiring to follow).
+  - **Launch**: split Configuration panel / live terminal (`agent_output.log`)
+    layout with a pulsing active indicator.
+  - **Answers**: category sections with inset containers, `font-mono` keys,
+    hover-reveal inline editing, and a de-emphasized EEO group with a
+    `HUMAN-ONLY — NEVER AUTO-FILLED` lock badge.
+  - Profile trend chart (uPlot) recoloured to the new palette.
+- **Update affordance only shows when an update is available.** The sidebar
+  footer now renders the full "Mercury X available / Update now" card *only*
+  when `updateAvailable` is true; when up to date it collapses to a single
+  muted `Mercury <version>` line (no "Up to date" card, no "Reinstall latest"
+  button).
+
 ## [0.6.0] - 2026-06-26
 
 ### Added

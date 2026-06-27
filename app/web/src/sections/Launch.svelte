@@ -1,6 +1,6 @@
 <script>
   import { api, post, subscribe } from "../api.js";
-  import { Rocket, X } from "@lucide/svelte";
+  import { Play, X, Settings2, Terminal } from "@lucide/svelte";
   import Select from "../lib/Select.svelte";
 
   let providers = $state([]);
@@ -109,53 +109,77 @@
 <h1 class="page-title">Launch</h1>
 <p class="page-sub">Run a Mercury skill through your agent — live</p>
 
-<div class="panel">
-  <div class="grid grid-cols-3 gap-3">
-    <label class="field-label">Agent
-      <Select items={providerItems} bind:value={provider} placeholder="Agent" ariaLabel="Agent" />
-    </label>
-    <label class="field-label">Model
-      <Select items={modelItems} bind:value={model} placeholder="Default" ariaLabel="Model" />
-    </label>
-    <label class="field-label">Skill
-      <Select items={skillItems} bind:value={skill} placeholder="Skill" ariaLabel="Skill" />
-    </label>
-  </div>
-
-  <div class="grid grid-cols-3 gap-3 mt-3">
-    {#if skill === "job-scout"}
-      <label class="field-label">Query<input class="input" bind:value={query} placeholder="backend engineer" /></label>
-      <label class="field-label">Location<input class="input" bind:value={location} /></label>
-    {:else if skill === "recruiter-outreach"}
-      <label class="field-label">Company<input class="input" bind:value={company} placeholder="Airbnb" /></label>
-      <label class="field-label">Location<input class="input" bind:value={location} /></label>
-    {:else if skill === "resume-tailor"}
-      <label class="field-label">Job IDs (comma-sep)<input class="input" bind:value={jobIds} placeholder="4393940374, 3969556398" /></label>
-    {:else if skill === "profile-optimizer"}
-      <span class="dim text-[0.85rem] self-center">No parameters — audits your profile.</span>
-    {:else if skill === "experience-bank"}
-      <span class="dim text-[0.85rem] self-center">No parameters — interviews you about new achievements (interactive).</span>
-    {/if}
-  </div>
-
-  <div class="mt-3.5 flex gap-2.5">
-    <button class="btn-primary" onclick={launch} disabled={running}>
-      <Rocket size={15} strokeWidth={2.2} />
-      {running ? "Running…" : "Launch"}
-    </button>
-    {#if running}<button class="btn-danger" onclick={cancel}><X size={15} strokeWidth={2.2} /> Cancel</button>{/if}
-  </div>
-</div>
-
-<div class="panel">
-  <h3>Agent stream {#if running}<span class="live-dot"></span>{/if}</h3>
-  {#if log.length === 0}
-    <div class="empty">No run yet. Pick a skill and hit Launch.</div>
-  {:else}
-    <div class="stream">
-      {#each log as entry}
-        <div class="stream-line {entry.kind}">{entry.text}</div>
-      {/each}
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[500px]">
+  <!-- Configuration panel -->
+  <div class="lg:col-span-5 flex flex-col bg-panel border border-border-2 rounded-xl overflow-hidden" style="box-shadow: 0 0 0 1px rgba(0,0,0,0.2);">
+    <div class="px-5 py-4 border-b border-border-2 bg-white/[0.01]">
+      <h2 class="text-[0.85rem] font-[590] text-muted tracking-[-0.182px] flex items-center gap-2">
+        <Settings2 size={16} class="text-dim" /> Configuration
+      </h2>
     </div>
-  {/if}
+    <div class="p-5 flex-1 overflow-y-auto space-y-5">
+      <label class="field-label">Agent
+        <Select items={providerItems} bind:value={provider} placeholder="Agent" ariaLabel="Agent" />
+      </label>
+      <label class="field-label">Model
+        <Select items={modelItems} bind:value={model} placeholder="Default" ariaLabel="Model" />
+      </label>
+      <label class="field-label">Skill
+        <Select items={skillItems} bind:value={skill} placeholder="Skill" ariaLabel="Skill" />
+      </label>
+
+      <!-- Skill-specific params -->
+      <div class="space-y-5 pt-1">
+        {#if skill === "job-scout"}
+          <label class="field-label">Query<input class="input normal-case font-normal" bind:value={query} placeholder="backend engineer" /></label>
+          <label class="field-label">Location<input class="input normal-case font-normal" bind:value={location} /></label>
+        {:else if skill === "recruiter-outreach"}
+          <label class="field-label">Company<input class="input normal-case font-normal" bind:value={company} placeholder="Airbnb" /></label>
+          <label class="field-label">Location<input class="input normal-case font-normal" bind:value={location} /></label>
+        {:else if skill === "resume-tailor"}
+          <label class="field-label">Job IDs (comma-sep)<input class="input normal-case font-normal" bind:value={jobIds} placeholder="4393940374, 3969556398" /></label>
+        {:else if skill === "profile-optimizer"}
+          <p class="text-[0.85rem] text-dim normal-case font-normal">No parameters — audits your profile.</p>
+        {:else if skill === "experience-bank"}
+          <p class="text-[0.85rem] text-dim normal-case font-normal">No parameters — interviews you about new achievements (interactive).</p>
+        {/if}
+      </div>
+    </div>
+    <div class="p-5 border-t border-border-2">
+      {#if running}
+        <button class="btn-danger w-full" onclick={cancel}><X size={16} /> Cancel</button>
+      {:else}
+        <button class="btn-primary w-full" onclick={launch}><Play size={16} /> Run Agent</button>
+      {/if}
+    </div>
+  </div>
+
+  <!-- Live agent stream / terminal -->
+  <div class="lg:col-span-7 flex flex-col bg-[#050505] border border-border rounded-xl overflow-hidden" style="box-shadow: inset 0 0 20px rgba(0,0,0,0.5);">
+    <div class="px-5 py-3 border-b border-border-2 bg-[#0a0a0b] flex items-center justify-between">
+      <h2 class="text-[0.8rem] font-mono text-dim flex items-center gap-2">
+        <Terminal size={14} /> agent_output.log
+      </h2>
+      {#if running}
+        <div class="flex items-center gap-2">
+          <span class="text-[0.68rem] font-[510] text-green uppercase tracking-wider">Active</span>
+          <span class="relative w-2 h-2 rounded-full bg-green">
+            <span class="absolute inset-0 rounded-full bg-green" style="animation: pulse-ring 2s cubic-bezier(0.215,0.61,0.355,1) infinite; z-index:-1;"></span>
+          </span>
+        </div>
+      {/if}
+    </div>
+    <div class="p-5 flex-1 overflow-y-auto font-mono text-[0.8rem] leading-[1.6] min-h-[280px]">
+      {#if log.length === 0}
+        <div class="text-faint">No run yet. Pick a skill and hit Run Agent.</div>
+      {:else}
+        {#each log as entry}
+          <div class="stream-line {entry.kind}">{entry.text}</div>
+        {/each}
+        {#if running}
+          <div class="inline-block w-2 h-4 bg-text opacity-70 animate-pulse translate-y-1 mt-1"></div>
+        {/if}
+      {/if}
+    </div>
+  </div>
 </div>

@@ -74,13 +74,13 @@
         scales: { x: { time: true } },
         series: [
           {},
-          { label: "Profile Views", stroke: "#6dd5ed", width: 2 },
-          { label: "Search Appearances", stroke: "#0077b5", width: 2 },
-          { label: "Connections", stroke: "#a855f7", width: 2 },
+          { label: "Profile Views", stroke: "#7170ff", width: 2 },
+          { label: "Search Appearances", stroke: "#5e6ad2", width: 2 },
+          { label: "Connections", stroke: "#10b981", width: 2 },
         ],
         axes: [
-          { stroke: "#71717a", grid: { stroke: "#1f1f26" } },
-          { stroke: "#71717a", grid: { stroke: "#1f1f26" } },
+          { stroke: "#8a8f98", grid: { stroke: "rgba(255,255,255,0.05)" } },
+          { stroke: "#8a8f98", grid: { stroke: "rgba(255,255,255,0.05)" } },
         ],
       },
       d,

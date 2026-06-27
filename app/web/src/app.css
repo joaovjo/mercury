@@ -1,177 +1,238 @@
 @import "tailwindcss";
+/* Inter Variable, bundled locally (no CDN). 100–900 so the 510 "signature"
+   weight Linear uses is available. */
+@import "@fontsource-variable/inter/wght.css";
 
-/* Map Mercury's design tokens into the Tailwind v4 theme so utilities like
-   bg-panel, text-blue, border-border, etc. exist and match the original look. */
+/* ──────────────────────────────────────────────────────────────────────────
+   Linear-inspired dark theme.
+   Dark-native canvas where surfaces emerge via background-luminance stepping
+   and semi-transparent white borders (not drop shadows). Brand indigo/violet
+   is the only chromatic accent; everything else is cool grayscale.
+
+   Token names are kept stable (--color-bg, --color-blue, …) so existing
+   components keep working; only the *values* and intent change:
+     --color-blue  → brand indigo  (#5e6ad2) — CTA backgrounds
+     --color-cyan  → accent violet (#7170ff) — links / active / interactive
+   ────────────────────────────────────────────────────────────────────────── */
 @theme {
-  --color-bg: #0a0a0f;
-  --color-panel: #101014;
-  --color-panel-2: #16161c;
-  --color-border: #1f1f26;
-  --color-border-2: #2a2a32;
-  --color-text: #e4e4e7;
-  --color-muted: #a1a1aa;
-  --color-dim: #71717a;
-  --color-blue: #0077b5;
-  --color-cyan: #6dd5ed;
-  --color-green: #22c55e;
-  --color-amber: #f59e0b;
-  --color-red: #ef4444;
-  --color-purple: #a855f7;
+  --color-bg: #08090a;          /* marketing black — canvas */
+  --color-panel: #0f1011;       /* sidebar / panel */
+  --color-panel-2: #191a1b;     /* elevated surface / cards */
+  --color-surface-2: #28282c;   /* lightest surface / hover */
+  --color-border: rgba(255, 255, 255, 0.08);   /* standard semi-transparent */
+  --color-border-2: rgba(255, 255, 255, 0.05); /* subtle */
+  --color-text: #f7f8f8;        /* primary (not pure white) */
+  --color-muted: #d0d6e0;       /* secondary body */
+  --color-dim: #8a8f98;         /* tertiary / metadata */
+  --color-faint: #62666d;       /* quaternary / timestamps */
+  --color-blue: #5e6ad2;        /* brand indigo (CTA bg) */
+  --color-cyan: #7170ff;        /* accent violet (links/active) */
+  --color-accent-hover: #828fff;
+  --color-green: #10b981;       /* success / status */
+  --color-amber: #f59e0b;       /* stretch / warning */
+  --color-red: #ec7c8a;         /* weak / error (Linear's softer red) */
+  --color-purple: #7170ff;      /* collapsed into accent violet */
 
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Berkeley Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-/* Legacy short-name aliases so existing component <style> blocks and inline
-   styles (var(--blue), var(--panel-2), …) keep working without edits. */
+/* Legacy short-name aliases so any remaining var(--blue) / var(--panel-2)
+   references keep working. Kept in lockstep with @theme above. */
 :root {
-  --bg: #0a0a0f;
-  --panel: #101014;
-  --panel-2: #16161c;
-  --border: #1f1f26;
-  --border-2: #2a2a32;
-  --text: #e4e4e7;
-  --muted: #a1a1aa;
-  --dim: #71717a;
-  --blue: #0077b5;
-  --cyan: #6dd5ed;
-  --green: #22c55e;
+  --bg: #08090a;
+  --panel: #0f1011;
+  --panel-2: #191a1b;
+  --surface-2: #28282c;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-2: rgba(255, 255, 255, 0.05);
+  --text: #f7f8f8;
+  --muted: #d0d6e0;
+  --dim: #8a8f98;
+  --faint: #62666d;
+  --blue: #5e6ad2;
+  --cyan: #7170ff;
+  --accent-hover: #828fff;
+  --green: #10b981;
   --amber: #f59e0b;
-  --red: #ef4444;
-  --purple: #a855f7;
+  --red: #ec7c8a;
+  --purple: #7170ff;
 }
 
 /* Base */
 html, body {
   background: var(--color-bg);
   color: var(--color-text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
+  /* cv01 = single-story 'a', ss03 = geometric alternates — Linear's identity.
+     These are non-negotiable for the look. */
+  font-feature-settings: "cv01", "ss03";
   -webkit-font-smoothing: antialiased;
 }
 a { color: var(--color-cyan); text-decoration: none; }
-a:hover { text-decoration: underline; }
+a:hover { color: var(--color-accent-hover); }
 
-/* Reusable component classes — the repeated chrome that would otherwise be
-   long utility strings duplicated across every section. */
+/* Reusable component classes — repeated chrome promoted out of long utility
+   strings. All restyled to the Linear surface/border/typography model. */
 @layer components {
+  /* Brand gradient text (logo, hero numbers). indigo → violet. */
   .grad {
-    background: linear-gradient(135deg, var(--color-blue), var(--color-cyan));
+    background: linear-gradient(135deg, var(--color-blue), var(--color-accent-hover));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
 
+  /* Surfaces. Cards are translucent white on the dark canvas; elevation is a
+     small bump in white opacity, not a shadow. */
   .panel {
-    @apply bg-panel border border-border rounded-2xl px-[22px] py-5 mb-[22px];
+    @apply bg-white/[0.02] border border-border rounded-xl px-6 py-5 mb-6;
+    box-shadow: rgba(0, 0, 0, 0.2) 0 0 0 1px;
   }
-  .panel h3 { @apply text-[1.05rem] mb-3.5; }
+  .panel h3 { @apply text-[1.05rem] font-[590] tracking-[-0.24px] mb-4; }
 
   .card {
-    @apply bg-panel border border-border rounded-[14px] px-5 py-[18px];
+    @apply bg-white/[0.02] border border-border-2 rounded-xl px-5 py-[18px] transition-colors;
   }
+  .card:hover { @apply bg-white/[0.04]; }
 
+  /* Status pills — translucent tint + matching text, semi-transparent border. */
   .pill {
-    @apply inline-block px-[9px] py-0.5 rounded-full text-[0.74rem] font-semibold;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[0.72rem] font-[510] border;
   }
-  .pill.pending      { background: #27272a; color: var(--color-muted); }
-  .pill.accepted     { background: rgba(34,197,94,.15); color: var(--color-green); }
-  .pill.replied      { background: rgba(109,213,237,.15); color: var(--color-cyan); }
-  .pill.interviewing { background: rgba(168,85,247,.15); color: var(--color-purple); }
-  .pill.closed       { background: #27272a; color: var(--color-dim); }
-  .pill.strong       { background: rgba(34,197,94,.15); color: var(--color-green); }
-  .pill.good         { background: rgba(109,213,237,.15); color: var(--color-cyan); }
-  .pill.stretch      { background: rgba(245,158,11,.15); color: var(--color-amber); }
-  .pill.bad          { background: rgba(239,68,68,.15); color: var(--color-red); }
-  .pill.neutral      { background: #27272a; color: var(--color-muted); }
+  .pill.pending      { background: rgba(255,255,255,.05); color: var(--color-dim);   border-color: var(--color-border-2); }
+  .pill.accepted     { background: rgba(16,185,129,.1);   color: var(--color-green);  border-color: rgba(16,185,129,.2); }
+  .pill.replied      { background: rgba(94,106,210,.1);   color: var(--color-accent-hover); border-color: rgba(94,106,210,.2); }
+  .pill.interviewing { background: rgba(16,185,129,.1);   color: var(--color-green);  border-color: rgba(16,185,129,.2); }
+  .pill.closed       { background: rgba(255,255,255,.05); color: var(--color-faint);  border-color: var(--color-border-2); }
+  .pill.strong       { background: rgba(16,185,129,.1);   color: var(--color-green);  border-color: rgba(16,185,129,.2); }
+  .pill.good         { background: rgba(16,185,129,.1);   color: var(--color-green);  border-color: rgba(16,185,129,.2); }
+  .pill.stretch      { background: rgba(245,158,11,.1);   color: var(--color-amber);  border-color: rgba(245,158,11,.2); }
+  .pill.bad          { background: rgba(236,124,138,.1);  color: var(--color-red);    border-color: rgba(236,124,138,.2); }
+  .pill.neutral      { background: rgba(255,255,255,.05); color: var(--color-dim);    border-color: var(--color-border-2); }
   /* Application lifecycle (portal-filler) */
-  .pill.draft        { background: #27272a; color: var(--color-muted); }
-  .pill.filled       { background: rgba(245,158,11,.15); color: var(--color-amber); }
-  .pill.submitted    { background: rgba(34,197,94,.15); color: var(--color-green); }
-  .pill.needs_input  { background: rgba(239,68,68,.15); color: var(--color-red); }
+  .pill.draft        { background: rgba(255,255,255,.05); color: var(--color-dim);    border-color: var(--color-border-2); }
+  .pill.filled       { background: rgba(94,106,210,.1);   color: var(--color-accent-hover); border-color: rgba(94,106,210,.2); }
+  .pill.submitted    { background: rgba(16,185,129,.1);   color: var(--color-green);  border-color: rgba(16,185,129,.2); }
+  .pill.needs_input  { background: rgba(245,158,11,.1);   color: var(--color-amber);  border-color: rgba(245,158,11,.2); }
+  /* Tiny status dot inside a pill */
+  .pill .dot { @apply w-1.5 h-1.5 rounded-full; background: currentColor; }
 
   .live-dot {
     @apply w-2 h-2 rounded-full bg-green inline-block;
     box-shadow: 0 0 8px var(--color-green);
   }
 
-  /* Page headers */
-  .page-title { @apply text-[1.5rem] font-bold mb-1; }
-  .page-sub   { @apply text-dim text-[0.9rem] mb-[26px]; }
+  /* Page headers — Linear's compressed display type. */
+  .page-title {
+    @apply text-[clamp(2rem,4vw,3rem)] font-[510] leading-none tracking-[-1.056px] mb-2;
+    color: var(--color-text);
+  }
+  .page-sub { @apply text-[1.05rem] text-dim font-normal tracking-[-0.165px] mb-8; }
 
   /* Card grid + card label/value */
-  .cards { @apply grid gap-4 mb-[30px]; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
-  .card .label { @apply text-[0.78rem] text-dim uppercase tracking-[0.08em]; }
-  .card .value { @apply text-[2rem] font-extrabold mt-1.5; }
+  .cards { @apply grid gap-4 mb-8; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  .card .label { @apply text-[0.82rem] text-muted font-[510] flex items-center gap-2; }
+  .card .value { @apply text-[2rem] font-[510] tracking-[-0.704px] mt-3.5; }
 
   /* Tables */
   table { @apply w-full border-collapse text-[0.88rem]; }
-  th { @apply text-left text-dim font-semibold px-2.5 py-2 border-b border-border text-[0.78rem] uppercase tracking-[0.05em]; }
-  td { @apply p-2.5 border-b border-border; }
+  th { @apply text-left text-faint font-[510] px-4 py-3 border-b border-border-2 text-[0.72rem] uppercase tracking-wider; }
+  td { @apply px-4 py-3 border-b border-white/[0.02]; }
   tr:last-child td { @apply border-b-0; }
 
   /* Kanban */
-  .kanban { @apply grid gap-3; grid-template-columns: repeat(5, 1fr); }
-  .kanban-col { @apply bg-panel-2 border border-border rounded-xl p-2.5; }
-  .kanban-col h4 { @apply text-[0.78rem] uppercase tracking-[0.05em] text-dim mb-2.5 flex justify-between; }
-  .kanban-card { @apply bg-panel border border-border-2 rounded-[9px] p-2.5 mb-2 text-[0.82rem]; }
-  .kanban-card .n { @apply font-semibold; }
-  .kanban-card .c { @apply text-dim text-[0.76rem] mt-0.5; }
+  .kanban { @apply flex gap-4 overflow-x-auto pb-2; }
+  .kanban-col {
+    @apply w-[300px] shrink-0 flex flex-col bg-panel/50 border border-white/[0.03] rounded-xl p-3;
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.02);
+  }
+  .kanban-col h4 {
+    @apply text-[0.76rem] font-[590] uppercase tracking-[-0.13px] text-muted mb-4 flex items-center justify-between px-1;
+  }
+  .kanban-col h4 .count {
+    @apply px-2 py-0.5 rounded-full bg-white/[0.05] border border-border-2 text-[0.68rem] font-[510] text-dim;
+  }
+  .kanban-card {
+    @apply relative overflow-hidden bg-white/[0.02] border border-border-2 rounded-lg p-4 mb-2 text-[0.82rem] transition-all;
+  }
+  .kanban-card:hover { @apply bg-white/[0.04] border-white/10; box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+  .kanban-card .accent { @apply absolute left-0 top-0 bottom-0 w-[2px]; }
+  .kanban-card .n { @apply text-[0.92rem] font-[510]; color: var(--color-text); }
+  .kanban-card .c { @apply text-dim text-[0.78rem] mt-1; }
 
   /* Misc utility text */
-  .empty { @apply text-dim text-[0.9rem] p-5 text-center; }
+  .empty { @apply text-dim text-[0.9rem] p-6 text-center; }
   .muted { @apply text-muted; }
   .dim   { @apply text-dim; }
 
-  /* Form controls — shared by Search + Launch */
-  .field-label { @apply flex flex-col gap-1.5 text-[0.78rem] text-dim; }
+  /* Form controls — shared by Search + Launch + Answers */
+  .field-label { @apply flex flex-col gap-1.5 text-[0.72rem] font-[510] text-dim uppercase tracking-wider; }
   .input {
-    @apply bg-panel-2 border border-border-2 rounded-lg px-[11px] py-2.5 text-text text-[0.9rem];
+    @apply bg-white/[0.02] border border-border rounded-lg px-3 py-2.5 text-text text-[0.9rem] transition-colors;
   }
-  .input:focus { @apply outline-none border-blue; }
+  .input:focus {
+    @apply outline-none border-blue;
+    box-shadow: 0 0 0 1px rgba(94, 106, 210, 0.5);
+  }
+  .input::placeholder { color: var(--color-faint); }
 
-  /* Buttons */
+  /* Buttons. Primary = solid brand indigo (the one place we use a solid fill);
+     secondary/ghost = near-transparent white. */
   .btn-primary {
-    @apply inline-flex items-center gap-[7px] text-white border-0 px-[18px] py-2.5 rounded-lg cursor-pointer font-semibold text-[0.9rem];
-    background: linear-gradient(135deg, var(--color-blue), var(--color-cyan));
+    @apply inline-flex items-center justify-center gap-2 text-white border-0 px-4 py-2.5 rounded-md cursor-pointer font-[510] text-[0.875rem] transition-colors;
+    background: var(--color-blue);
   }
-  .btn-primary:disabled { @apply opacity-50 cursor-not-allowed; }
+  .btn-primary:hover { background: var(--color-accent-hover); }
+  .btn-primary:disabled { @apply opacity-60 cursor-not-allowed; }
+  .btn-primary:disabled:hover { background: var(--color-blue); }
   .btn-success {
-    @apply inline-flex items-center gap-[7px] text-bg border-0 px-[18px] py-2.5 rounded-lg cursor-pointer font-bold text-[0.85rem] whitespace-nowrap shrink-0;
-    background: linear-gradient(135deg, #22c55e, #4ade80);
+    @apply inline-flex items-center justify-center gap-2 text-white border-0 px-4 py-2.5 rounded-md cursor-pointer font-[510] text-[0.85rem] whitespace-nowrap shrink-0 transition-colors;
+    background: var(--color-green);
   }
-  .btn-success:disabled { @apply opacity-55 cursor-not-allowed; }
+  .btn-success:hover { background: #34d399; }
+  .btn-success:disabled { @apply opacity-60 cursor-not-allowed; }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-[0.85rem] cursor-pointer transition-colors;
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--color-muted);
+  }
+  .btn-ghost:hover { background: rgba(255, 255, 255, 0.05); color: var(--color-text); }
   .btn-danger {
-    @apply inline-flex items-center gap-1.5 bg-transparent text-red border border-red px-4 py-2.5 rounded-lg cursor-pointer;
+    @apply inline-flex items-center gap-1.5 bg-transparent text-red border border-red/40 px-4 py-2.5 rounded-md cursor-pointer transition-colors;
   }
+  .btn-danger:hover { background: rgba(236, 124, 138, 0.1); }
 
-  /* Agent stream (Launch) */
+  /* Agent stream / terminal (Launch). */
   .stream {
-    @apply bg-panel-2 border border-border rounded-lg p-3.5 max-h-[460px] overflow-auto font-mono text-[0.82rem];
+    @apply bg-[#050505] border border-border rounded-lg p-4 max-h-[460px] overflow-auto font-mono text-[0.8rem] leading-[1.6];
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
   }
-  .stream-line { @apply py-px whitespace-pre-wrap leading-normal; }
-  .stream-line.msg    { @apply text-text; }
-  .stream-line.tool   { @apply text-cyan; }
-  .stream-line.status { @apply text-green; }
-  .stream-line.plan   { @apply text-purple; }
-  .stream-line.perm   { @apply text-amber; }
-  .stream-line.err    { @apply text-red; }
+  .stream-line { @apply py-px whitespace-pre-wrap; }
+  .stream-line.msg    { color: var(--color-muted); }
+  .stream-line.tool   { color: var(--color-accent-hover); }
+  .stream-line.status { color: var(--color-text); }
+  .stream-line.plan   { color: var(--color-cyan); }
+  .stream-line.perm   { color: var(--color-amber); }
+  .stream-line.err    { color: var(--color-red); }
 
   /* Breakdown grid (Overview + Profile) */
-  .bd-grid { @apply grid gap-2; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .bd-grid { @apply space-y-1; }
   .bd-row {
-    @apply flex items-center justify-between gap-2.5 bg-panel-2 border border-border rounded-lg px-3 py-2;
+    @apply flex items-center justify-between gap-2.5 rounded-md px-3 py-2.5 transition-colors;
   }
-  .bd-label { @apply text-[0.85rem] capitalize; }
-  /* Breakdown status pills — distinct from .pill.good (cyan, job-fit) so a
-     "good" audit item stays green as before. */
-  .bd-pill { @apply inline-block px-[9px] py-0.5 rounded-full text-[0.72rem] font-semibold; }
-  .bd-pill.good    { background: rgba(34,197,94,.15); color: var(--color-green); }
-  .bd-pill.bad     { background: rgba(239,68,68,.15); color: var(--color-red); }
-  .bd-pill.neutral { background: #27272a; color: var(--color-muted); }
+  .bd-row:hover { @apply bg-white/[0.03]; }
+  .bd-divider { @apply h-px; background: #141516; }
+  .bd-label { @apply text-[0.9rem] capitalize; color: var(--color-muted); }
+  .bd-pill { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.72rem] font-[510] border; }
+  .bd-pill.good    { background: rgba(16,185,129,.1);  color: var(--color-green); border-color: rgba(16,185,129,.2); }
+  .bd-pill.bad     { background: rgba(236,124,138,.1); color: var(--color-red);   border-color: rgba(236,124,138,.2); }
+  .bd-pill.neutral { background: rgba(255,255,255,.05); color: var(--color-dim);  border-color: var(--color-border-2); }
 
   /* Loading skeleton */
   .skeleton {
     @apply h-3.5 rounded-md;
-    background: linear-gradient(90deg, var(--color-panel-2) 25%, var(--color-border-2) 37%, var(--color-panel-2) 63%);
+    background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.05) 37%, rgba(255,255,255,0.02) 63%);
     background-size: 400% 100%;
     animation: shimmer 1.4s ease infinite;
   }
@@ -180,4 +241,10 @@ a:hover { text-decoration: underline; }
 @keyframes shimmer {
   0%   { background-position: 100% 0; }
   100% { background-position: -100% 0; }
+}
+
+/* Pulsing ring on the live/active terminal indicator. */
+@keyframes pulse-ring {
+  0%   { transform: scale(0.8); opacity: 0.5; }
+  100% { transform: scale(2);   opacity: 0; }
 }
