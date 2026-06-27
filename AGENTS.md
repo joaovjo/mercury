@@ -109,6 +109,14 @@ mercury setup --all           # copy skills into every detected agent
 - **Skills persist via the CLI.** When adding a skill capability that produces
   trackable data, add the matching `mercury …` call to its SKILL.md and a write
   subcommand if needed.
+- **NEVER commit real personal data.** Tests, fixtures, code comments, example
+  strings, commit messages, PR/issue text, and skill docs must use *synthetic*
+  identities only (`Recruiter One`, `Acme Corp`, slugs like `recruiter-one-000001`,
+  diacritic cases like `Renée Würst`). No real human names, real LinkedIn
+  usernames/slugs, real companies tied to a real person, or the maintainer's own
+  identity. Real outreach data lives ONLY in the gitignored `~/.mercury/mercury.db`.
+  This repo is public — third-party PII must never enter git history. Grep-verify
+  before committing.
 
 ## Releases (maintainers)
 
