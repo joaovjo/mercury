@@ -196,9 +196,10 @@ mercury job save \
   --link "https://www.linkedin.com/jobs/view/{id}/"
 ```
 
-Log the scout run:
+Log the scout run (always pass `--kind` — a bare `mercury activity log`
+silently inserts an empty, uncategorized row):
 ```
-mercury activity log --skill job-scout --summary "Scouted {N} roles for {query}"
+mercury activity log --kind scout --skill job-scout --summary "Scouted {N} roles for {query}"
 ```
 
 > If `mercury` isn't installed, just present the shortlist tables (below).

@@ -109,10 +109,15 @@ When a recruiter accepts or replies, update their status:
 mercury recruiter update --id {id} --status accepted   # or: replied | interviewing | closed
 ```
 
-Log the outreach wave as an activity entry:
+Log the outreach wave as an activity entry (always pass `--kind` — a bare
+`mercury activity log` silently inserts an empty, uncategorized row):
 ```
-mercury activity log --skill recruiter-outreach --summary "Sent {N} requests to {companies}"
+mercury activity log --kind outreach --skill recruiter-outreach \
+  --summary "Sent {N} requests to {companies}"
 ```
+
+Other useful kinds: `recruiter_update` (status change), `outreach` (requests sent).
+Add structured data with `--payload '{"recruiter_id":N,"event":"..."}'`.
 
 > If the `mercury` CLI isn't installed, fall back to appending a row to the
 > Recruiter Outreach Tracker table in the user's journal markdown.
