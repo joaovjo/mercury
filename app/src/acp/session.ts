@@ -4,8 +4,19 @@ import { AcpClient } from "./client.ts";
  * Builds templated prompts for each Mercury skill so the dashboard can launch
  * them with one click. The agent has the skills available and will persist
  * results via the `mercury` CLI.
+ *
+ * Any free-form `params.extra` (the Launch tab's "Additional context" field) is
+ * appended as a clearly delimited block to EVERY skill's prompt so a single run
+ * can be nudged without editing skills or code. When `extra` is empty the prompt
+ * is byte-identical to the un-nudged template.
  */
 export function buildSkillPrompt(skill: string, params: Record<string, string>): string {
+  const base = baseSkillPrompt(skill, params);
+  return appendExtra(base, params.extra);
+}
+
+/** The per-skill template, without any free-form additional-context block. */
+function baseSkillPrompt(skill: string, params: Record<string, string>): string {
   switch (skill) {
     case "job-scout":
       return `Use the job-scout skill. Search LinkedIn for "${params.query ?? "software engineer"}"${
@@ -28,6 +39,17 @@ export function buildSkillPrompt(skill: string, params: Record<string, string>):
     default:
       return params.prompt ?? skill;
   }
+}
+
+/**
+ * Append the user's one-off "Additional context" to a built prompt, clearly
+ * delimited so the agent treats it as authoritative for this run. Returns the
+ * prompt unchanged when `extra` is missing/blank (so empty input is a no-op).
+ */
+function appendExtra(prompt: string, extra: string | undefined): string {
+  const trimmed = extra?.trim();
+  if (!trimmed) return prompt;
+  return `${prompt}\n\n---\nAdditional context from the user (honor this):\n${trimmed}`;
 }
 
 /**

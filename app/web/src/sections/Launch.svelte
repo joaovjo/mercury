@@ -15,6 +15,7 @@
   let location = $state("São Paulo");
   let company = $state("");
   let jobIds = $state("");
+  let extra = $state(""); // free-form "Additional context" appended to the prompt
 
   $effect(() => {
     api("acp/providers").then((p) => {
@@ -75,7 +76,7 @@
 
   async function launch() {
     log = [];
-    const params = { query, location, company, jobIds };
+    const params = { query, location, company, jobIds, extra };
     const selectedProvider = providers.find((p) => p.id === provider);
     const selectedModel = selectedProvider?.models?.includes(model) ? model : undefined;
     try {
@@ -144,6 +145,25 @@
           <p class="text-[0.85rem] text-dim normal-case font-normal">No parameters — interviews you about new achievements (interactive).</p>
         {/if}
       </div>
+
+      <!-- Free-form extra context, appended to every skill's prompt (issue #16) -->
+      <label class="field-label pt-1">
+        <span class="flex items-center justify-between">
+          Additional context / instructions (optional)
+          <span class="flex items-center gap-2 normal-case font-normal text-faint text-[0.7rem]">
+            {extra.length}
+            {#if extra.trim()}
+              <button type="button" class="text-dim hover:text-text underline underline-offset-2" onclick={() => (extra = "")}>clear</button>
+            {/if}
+          </span>
+        </span>
+        <textarea
+          class="input normal-case font-normal resize-y min-h-[72px]"
+          bind:value={extra}
+          rows="3"
+          placeholder="focus on remote roles, skip crypto; or paste a JD here…"
+        ></textarea>
+      </label>
     </div>
     <div class="p-5 border-t border-border-2">
       {#if running}
