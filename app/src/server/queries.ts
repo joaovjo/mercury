@@ -1,4 +1,6 @@
 import { db } from "../db/index.ts";
+import { now } from "../db/index.ts";
+import { dueAttempts, getBudget } from "../outreach/store.ts";
 
 /** Parse a breakdown_json blob into a normalized array of {label, value} items. */
 function parseBreakdown(raw: string | null | undefined): Array<{ label: string; value: string }> | null {
@@ -160,5 +162,74 @@ export const queries = {
 
   profile() {
     return db().query("SELECT * FROM profile WHERE id = 1").get() ?? null;
+  },
+
+  /**
+   * Outreach relationship-memory overview (issue #11): lifecycle funnel,
+   * the due-today action queue, per-company blocked counts, and InMail budget.
+   * Reuses the pure store helpers so semantics match the CLI exactly.
+   */
+  outreach() {
+    const d = db();
+
+    const funnelRows = d
+      .query("SELECT state, COUNT(*) AS n FROM outreach_attempts GROUP BY state")
+      .all() as Array<{ state: string; n: number }>;
+    const funnel: Record<string, number> = {
+      queued: 0,
+      invited: 0,
+      accepted: 0,
+      followed_up: 0,
+      engaged: 0,
+      invite_ignored: 0,
+      unresponsive: 0,
+      do_not_contact: 0,
+    };
+    for (const r of funnelRows) funnel[r.state] = r.n;
+
+    const due = dueAttempts(d).map(({ attempt, action }) => ({
+      id: attempt.id,
+      person_name: attempt.person_name,
+      person_username: attempt.person_username,
+      company_name: attempt.company_name,
+      company_urn: attempt.company_urn,
+      state: attempt.state,
+      actionKind: action.kind,
+      actionReason: action.reason,
+    }));
+
+    // Per-company blocked counts (only attempts currently within cooldown).
+    const nowIso = now();
+    const blockingRows = d
+      .query(
+        `SELECT company_urn, company_name, block_until FROM outreach_attempts
+         WHERE state IN ('invite_ignored','unresponsive','do_not_contact')`,
+      )
+      .all() as Array<{ company_urn: string; company_name: string | null; block_until: string | null }>;
+    const blockedMap = new Map<string, { company_name: string | null; company_urn: string; count: number }>();
+    for (const r of blockingRows) {
+      const active = !r.block_until || new Date(r.block_until) > new Date(nowIso);
+      if (!active) continue;
+      const cur = blockedMap.get(r.company_urn) ?? {
+        company_name: r.company_name,
+        company_urn: r.company_urn,
+        count: 0,
+      };
+      cur.count += 1;
+      blockedMap.set(r.company_urn, cur);
+    }
+    const blocked = [...blockedMap.values()].sort((a, b) => b.count - a.count);
+
+    const b = getBudget(d);
+    const budget = {
+      plan: b.plan,
+      credits_remaining: b.credits_remaining,
+      reserve_floor: b.reserve_floor,
+      credits_used_this_cycle: b.credits_used_this_cycle,
+      inmail_monthly_allotment: b.inmail_monthly_allotment,
+      inmail_rollover_cap: b.inmail_rollover_cap,
+    };
+
+    return { funnel, due, blocked, budget };
   },
 };

@@ -245,6 +245,8 @@ function handleApi(path: string): Response {
       return Response.json(queries.overview());
     case "/api/recruiters":
       return Response.json(queries.recruiters());
+    case "/api/outreach":
+      return Response.json(queries.outreach());
     case "/api/jobs":
       return Response.json(queries.jobs());
     case "/api/metrics":

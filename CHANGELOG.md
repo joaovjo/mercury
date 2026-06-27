@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-06-27
+
+### Added
+
+- **Outreach relationship memory (issue #11).** Durable, dated, per-(person ×
+  company-URN) tracking of every outreach attempt, so the toolkit stops
+  re-pestering people who already ignored a request and drives follow-up
+  cadences instead of relying on memory.
+  - **Schema (v3):** new `outreach_attempts` table scoped by
+    `(person_username, company_urn)` — the stable LinkedIn company **URN**, not
+    the free-text name (so "Amazon" vs "AWS" can't fragment a block). A person
+    is blocked for a company only while an attempt sits in a terminal
+    non-engaged state (`invite_ignored` / `unresponsive` / `do_not_contact`)
+    within the cooldown window — so someone ignored at Company A is fair game
+    once they move to Company B. New singleton `outreach_budget` table tracks
+    InMail credits. Existing `recruiters` rows are **backfilled** into the
+    attempt log on first run (company URN resolved from `companies` where known;
+    otherwise a synthetic `name:<company>` URN is recorded and flagged).
+  - **Lifecycle state machine:** `queued → invited → {invite_ignored | accepted
+    → followed_up → unresponsive | engaged}`, with manual `do_not_contact`. A
+    reply at any stage jumps to `engaged` and stops automation. Pure,
+    unit-tested logic in `src/outreach/core.ts`.
+  - **Three follow-up cadences** (configurable thresholds): invite unaccepted
+    ≥7d → withdraw + block; accepted with no reply ≥4d → gentle nudge; nudge
+    unanswered ≥7d → mark unresponsive + block.
+  - **Cost-aware channel selection:** prefer free paths (1st-degree message,
+    2nd-degree connect+note, Open-Profile InMail) and only spend a scarce InMail
+    credit on a high-value 3rd-degree target with no warmer path, never below a
+    configurable reserve floor. The weekly invite limit is tracked as a separate
+    budget from InMail credits. Replies within 90 days **refund** the credit.
+  - **CLI:** `mercury outreach log | update | check | due | list | blocked |
+    budget | withdraw`. `check` exits non-zero when blocked so skills can gate
+    on it.
+  - **Dashboard:** new **Outreach** panel — lifecycle funnel, a "due today"
+    action queue (withdraw / follow-up / close with reasons), per-company
+    blocked counts, and an InMail-credit budget card. Served from a read-only
+    `/api/outreach` route.
+  - **Skills:** `recruiter-outreach` now blacklist-checks each candidate and
+    records every send as an attempt (with channel + credit cost); `job-scout`
+    surfaces individuals already blocked for a researched company; new
+    **`outreach-tracker`** skill runs the daily due-queue, drafts follow-ups,
+    detects replies via the LinkedIn inbox, and withdraws stale invites — all
+    behind explicit user consent (never auto-sends).
+  - **Config:** new `outreach` block in `~/.mercury/config.json` (thresholds,
+    `companyBlock` cooldown default 9 months, InMail plan/allotment/reserve,
+    weekly invite limit). Stored as JSON to match Mercury's existing
+    single-config-file convention rather than the spec's TOML.
+
+### Notes
+
+- Invitation **withdrawal** (cadence #1) has no LinkedIn MCP tool, so it is
+  driven via Chrome MCP browser automation in the `outreach-tracker` skill; the
+  deterministic `mercury outreach withdraw` degrades gracefully (still records
+  the block) when a browser withdrawal can't be confirmed.
+
 ## [0.7.0] - 2026-06-26
 
 ### Changed

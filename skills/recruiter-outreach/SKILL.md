@@ -16,6 +16,8 @@ in the user's region.
 ## Prerequisites
 
 - **LinkedIn MCP** — `get_company_profile`, `search_people`, `connect_with_person`
+- **Mercury CLI** — `mercury outreach check|log|budget` for blacklist gating,
+  attempt logging, and InMail-credit budgeting (see §3b, §3c, §6)
 
 ## Workflow
 
@@ -58,6 +60,45 @@ Deprioritize:
 - Recruiting Coordinators (limited decision-making power)
 - Leadership/Executive recruiters (wrong level for IC roles)
 - 3rd+ degree with no mutuals (low accept rate)
+
+### 3b. Blacklist check — skip anyone already blocked for THIS company
+
+Before drafting or sending anything, gate **each** candidate against Mercury's
+outreach memory. A block is scoped to **(person, company URN)** — someone you
+already pestered at this company is off-limits here, but fair game once they
+move elsewhere. Always resolve the company URN first (§1).
+
+```
+mercury outreach check --username "{linkedin_username}" --company-urn "{URN}"
+```
+
+- **Exit 0 / "OK"** → proceed.
+- **Exit 1 / "BLOCKED: …"** → **skip** this person for this company and tell the
+  user why (the reason + cooldown date are printed). Do not re-invite. If they
+  also show as a 1st-degree connection who simply hasn't replied, that's still a
+  block — don't double-message.
+
+This prevents re-pestering people who ignored a prior request and keeps your
+accept-rate (and reputation) healthy.
+
+### 3c. Choose the cheapest effective channel (cost-aware)
+
+Outreach has two **separate** budgets: the weekly connection-invite limit
+(~100/week, free) and scarce paid **InMail credits**. Prefer free paths and only
+spend a credit when there's no warmer route. Check the InMail budget with
+`mercury outreach budget` before considering InMail.
+
+Priority order:
+
+1. **1st degree** → free direct **message**.
+2. **2nd degree** → free **connection request + note** (uses the weekly invite
+   budget, *not* an InMail credit). This is the default for recruiter outreach.
+3. **3rd+ degree, Open Profile** → free **InMail** (no credit spent).
+4. **3rd+ degree, high-value, no warmer path** → spend **1 InMail credit** — but
+   only if `credits_remaining − reserve_floor ≥ 1`. Otherwise seek a
+   mutual-connection **intro** or **queue** the person until fresh credits.
+
+Surface the chosen channel + cost to the user; never exceed the reserve floor.
 
 ### 4. Draft Connection Notes
 
@@ -120,10 +161,32 @@ mercury recruiter add \
 > This `--note` is your *private* Mercury record (recording mutuals here is
 > useful for follow-up context) — it is NOT the LinkedIn connection note.
 
-When a recruiter accepts or replies, update their status:
+**Also record the outreach attempt** in the relationship-memory log, scoped by
+company URN. This is what powers blacklist checks (§3b), the follow-up cadence,
+and the Outreach dashboard. Do this after *every* send:
+
+```
+mercury outreach log \
+  --username "{linkedin_username}" --name "{Name}" \
+  --company-urn "{URN}" --company "{Company}" \
+  --channel connect_note \
+  --source-skill recruiter-outreach
+```
+
+- For a **1st-degree direct message**, use `--channel message`.
+- For an **InMail** that spent a credit, use `--channel inmail --cost 1` (this
+  decrements the tracked budget and opens the 90-day refund window).
+- A freshly-logged attempt starts in state `invited` and the tracker will
+  compute its follow-up/withdraw due-dates automatically.
+
+When a recruiter accepts or replies, update both records:
 ```
 mercury recruiter update --id {id} --status accepted   # or: replied | interviewing | closed
+mercury outreach update --id {attemptId} --state accepted   # or: engaged (on reply)
 ```
+
+> Marking `engaged` on a reply also refunds an InMail credit if one was spent
+> within the 90-day window.
 
 Log the outreach wave as an activity entry (always pass `--kind` — a bare
 `mercury activity log` silently inserts an empty, uncategorized row):

@@ -29,6 +29,14 @@ Usage:
 Write API (used by skills):
   mercury recruiter add --name <n> [--company --username --title --location --degree --status --note]
   mercury recruiter update --id <n> [--status --note]
+  mercury outreach log --username <u> --company-urn <n> [--name --company --channel --state --cost --source-skill]
+  mercury outreach check --username <u> --company-urn <n>   Blacklist check (exit 1 if blocked)
+  mercury outreach update --id <n> --state <s> [--reason]   Transition lifecycle state
+  mercury outreach due [--on YYYY-MM-DD]                    List due follow-up/withdraw/close actions
+  mercury outreach list [--company-urn <n>] [--state <s>]   List attempts
+  mercury outreach blocked --company-urn <n>                List people blocked for a company
+  mercury outreach budget [set: --plan --remaining --allotment --rollover-cap --reserve-floor]
+  mercury outreach withdraw --id <n>                        Withdraw pending invite (browser) + block
   mercury job save [--linkedin-id --title --company --location --work-type --comp --fit --link --status]
   mercury metric record [--search-appearances --profile-views --post-impressions --connections --score]
   mercury score record --value <n> [--signals <json>]
@@ -103,6 +111,11 @@ async function main() {
     case "recruiter":
       await recruiterCmd(positionals[0] ?? "", flags);
       break;
+    case "outreach": {
+      const { outreachCmd } = await import("./outreach.ts");
+      await outreachCmd(positionals[0] ?? "", flags);
+      break;
+    }
     case "job":
       await jobCmd(positionals[0] ?? "", flags);
       break;

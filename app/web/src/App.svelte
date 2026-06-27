@@ -4,6 +4,7 @@
   import { useLiveTable } from "./lib/live.svelte.js";
   import Overview from "./sections/Overview.svelte";
   import Recruiters from "./sections/Recruiters.svelte";
+  import Outreach from "./sections/Outreach.svelte";
   import Jobs from "./sections/Jobs.svelte";
   import Search from "./sections/Search.svelte";
   import Launch from "./sections/Launch.svelte";
@@ -15,7 +16,7 @@
   import {
     LayoutDashboard, UserRound, Search as SearchIcon, Rocket, Users,
     Briefcase, FileText, CalendarClock, Activity as ActivityIcon, Download,
-    ClipboardList,
+    ClipboardList, Send,
   } from "@lucide/svelte";
 
   let active = $state("overview");
@@ -64,6 +65,7 @@
     { id: "search", label: "Search", icon: SearchIcon },
     { id: "launch", label: "Launch", icon: Rocket },
     { id: "recruiters", label: "Recruiters", icon: Users },
+    { id: "outreach", label: "Outreach", icon: Send },
     { id: "jobs", label: "Jobs", icon: Briefcase },
     { id: "applications", label: "Applications", icon: FileText },
     { id: "answers", label: "Answers", icon: ClipboardList },
@@ -175,6 +177,7 @@
         {:else if active === "search"}<Search />
         {:else if active === "launch"}<Launch />
         {:else if active === "recruiters"}<Recruiters />
+        {:else if active === "outreach"}<Outreach />
         {:else if active === "jobs"}<Jobs />
         {:else if active === "applications"}<Applications />
         {:else if active === "answers"}<Answers />

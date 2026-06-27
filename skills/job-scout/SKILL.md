@@ -204,6 +204,21 @@ mercury activity log --kind scout --skill job-scout --summary "Scouted {N} roles
 
 > If `mercury` isn't installed, just present the shortlist tables (below).
 
+### 5c. Surface already-blocked contacts (outreach memory)
+
+When you research a company, check whether the user has people already **blocked**
+for that company in Mercury's outreach memory — so they don't re-pester someone
+who ignored a prior request, and so they know who's *not* a viable warm path.
+Resolve the company URN first (§Company URN Lookup), then:
+
+```
+mercury outreach blocked --company-urn "{URN}"
+```
+
+If it lists anyone, note it alongside that company in the shortlist (e.g.
+"⚠️ 2 contacts blocked here — see Outreach"). Blocks are scoped per company and
+expire after a cooldown, so this only reflects people currently off-limits.
+
 ### 6. Flag Caveats
 
 - Diversity-scoped roles ("Vaga para mulheres", "PCD-only") — note eligibility
