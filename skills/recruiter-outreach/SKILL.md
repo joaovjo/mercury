@@ -66,11 +66,24 @@ Deprioritize:
 - Must be specific (company + role type + your signal)
 - No fluff ("I'd be honored to connect with you")
 - Don't ask "are there openings?" — assume there are (you saw the listings)
+- **Never restate what LinkedIn already shows on the request UI** — the
+  recipient already sees your shared/mutual connections, their own title, and
+  the connection degree. Writing "we share mutual connections (X, Y)" is
+  redundant filler that reads as a templated mail-merge and wastes the ~300
+  char budget. Spend those characters on intent + why-them instead.
+- **Lead with intent + why-this-company, not a résumé dump.** A short stack
+  signal is fine, but the note's job is to say what you want and why they're a
+  fit — not to list everything on your profile (they can click through).
 
 **Template:**
 ```
-Hi {Name} — I'm {User}, {Role} at {Company} ({City}), working on {specialty} with {stack}. I saw {Target} is {growth signal} and I'm interested in the {role type} roles. Would love to connect and chat if you're hiring for that area.
+Hi {Name} — I'm {User}, a {role/specialty} engineer ({1-line stack signal}). {One concrete reason THIS company/team fits — e.g. "GitLab's all-remote engineering culture is how I want to work" or "you hire backend across LATAM & the Americas"}. Would love to connect about {role type} roles.
 ```
+
+> The "why-them" clause is the highest-leverage part. Pull it from the company
+> profile (all-remote, region focus, growth signal) or the recruiter's own
+> headline ("you recruit backend across the Americas"). Skip it only if you
+> genuinely have nothing specific — a generic note still beats a templated one.
 
 **Adapt per company:**
 - DoorDash: "growing the SP engineering hub"
@@ -101,8 +114,11 @@ After each connection request is sent, record it in the Mercury database via the
 mercury recruiter add \
   --name "{Name}" --company "{Company}" --username "{linkedin_username}" \
   --title "{Title}" --location "{City}" --degree "{2nd|3rd}" \
-  --status pending --note "{mutuals / context}"
+  --status pending --note "{internal tracking note: mutuals, why-them, region}"
 ```
+
+> This `--note` is your *private* Mercury record (recording mutuals here is
+> useful for follow-up context) — it is NOT the LinkedIn connection note.
 
 When a recruiter accepts or replies, update their status:
 ```
@@ -146,4 +162,10 @@ Thanks for connecting, {Name}! I'm {User} — {Role} at {Company} ({City}), {sta
 3. **Recruiter titles vary**: Sourcer, Technical Recruiter, Talent Acquisition, Recruiting Coordinator — all valid but prioritize Sourcers and Technical Recruiters for IC roles
 4. **"Message" button vs "Connect"**: 3rd+ degree shows "Message" (uses InMail credits) or "Follow". "Connect" with note is preferred for 2nd-degree.
 5. **Diversity of time zones**: US-based recruiters covering LatAm are common at big tech — don't skip them just because they're not local
-6. **Mutual connections matter**: mention them in the note if relevant ("We share mutual connections in the Amazon SP office")
+6. **Don't restate auto-shown info in the note**: LinkedIn already displays
+   your mutual connections, the recipient's title, and the connection degree on
+   the request UI. Restating "we share mutual connections (X, Y)" is redundant
+   and looks templated. Only reference shared context LinkedIn does NOT surface
+   — e.g. "we both worked at Smart BR", "met at {conf}", "I follow your posts on
+   {topic}". When prioritizing recruiters, mutuals still matter (warmer accept
+   rate) — just don't spend note characters announcing them.
