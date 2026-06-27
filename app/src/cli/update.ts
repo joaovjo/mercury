@@ -32,8 +32,9 @@ export async function updateCmd(flags: Flags = {}): Promise<void> {
   if (flags.force !== true) {
     const status = await getUpdateStatus();
     if (!status.updateAvailable) {
-      const latest = status.latest ?? status.current;
-      console.log(`Mercury is already up to date (${latest}).`);
+      // Report the INSTALLED version — not the cached `latest`, which may be
+      // stale and would otherwise advertise a version older than current.
+      console.log(`Mercury is already up to date (${status.current}).`);
       console.log("Run `mercury update --force` to reinstall the latest release.");
       return;
     }

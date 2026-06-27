@@ -103,13 +103,27 @@ async function fetchLatest(): Promise<string | null> {
 }
 
 /**
+ * A cached `latest` that is older than the installed build is never
+ * legitimate — it means the cache was written by an older binary (or the
+ * release it pointed at was since the user upgraded out-of-band). Treat such
+ * a cache as stale regardless of its timestamp.
+ */
+function cacheIsStale(cache: UpdateCache): boolean {
+  return isNewer(VERSION, cache.latest);
+}
+
+/**
  * Resolve the latest known version, using the cache when it's fresh and
  * refreshing from the network otherwise. Returns null on any failure.
+ *
+ * The cache is also considered stale (and re-fetched) whenever the installed
+ * VERSION is newer than the cached `latest`, so a left-over cache can never
+ * pin us to a version older than what's actually installed.
  */
 async function resolveLatest(): Promise<string | null> {
   const cache = readCache();
   const now = Date.now();
-  if (cache && now - cache.checkedAt < CHECK_INTERVAL_MS) {
+  if (cache && now - cache.checkedAt < CHECK_INTERVAL_MS && !cacheIsStale(cache)) {
     return cache.latest;
   }
   const latest = await fetchLatest();
@@ -117,9 +131,10 @@ async function resolveLatest(): Promise<string | null> {
     writeCache({ checkedAt: now, latest });
     return latest;
   }
-  // Network failed — fall back to a stale cache value if we have one, but
-  // refresh the timestamp lightly so we don't hammer on every invocation.
-  if (cache) {
+  // Network failed — fall back to a stale cache value only if it isn't behind
+  // the installed version. Refresh the timestamp lightly so we don't hammer on
+  // every invocation.
+  if (cache && !cacheIsStale(cache)) {
     writeCache({ checkedAt: now, latest: cache.latest });
     return cache.latest;
   }
@@ -131,7 +146,10 @@ export async function getUpdateStatus(): Promise<{
   latest: string | null;
   updateAvailable: boolean;
 }> {
-  const latest = await resolveLatest();
+  const resolved = await resolveLatest();
+  // Never advertise a `latest` that is behind the installed version: a stale
+  // or garbage cache must not be able to report a version older than current.
+  const latest = resolved && isNewer(VERSION, resolved) ? VERSION : resolved;
   return {
     current: VERSION,
     latest,
