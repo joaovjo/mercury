@@ -186,6 +186,36 @@ export async function dashboardCmd(flags: Flags): Promise<void> {
           acp.cancel();
           return Response.json({ ok: true });
         }
+        // Recruiter sync (issue #15) — detect accepted invites via 1st-degree
+        // LinkedIn search, then advance pending→accepted. Drives the MCP, so it
+        // can fail with a 502 if LinkedIn is unreachable.
+        if (path === "/api/recruiters/sync" && req.method === "POST") {
+          const body = (await req.json().catch(() => ({}))) as { apply?: boolean };
+          try {
+            const { runSync } = await import("../recruiter/sync.ts");
+            const result = await runSync({ apply: body.apply === true });
+            if (body.apply === true && result.changes.length) {
+              db()
+                .query(
+                  `INSERT INTO activity_log (kind, skill, summary)
+                   VALUES ('recruiter_sync', 'recruiter-sync', $summary)`,
+                )
+                .run({
+                  $summary: `Sync: ${result.changes.length} accepted (${result.changes
+                    .map((c) => c.name)
+                    .join(", ")})`,
+                });
+              broadcast(sockets, { type: "changed", table: "recruiters" });
+              broadcast(sockets, { type: "changed", table: "activity_log" });
+            }
+            return Response.json(result);
+          } catch (err) {
+            return Response.json(
+              { error: err instanceof Error ? err.message : String(err) },
+              { status: 502 },
+            );
+          }
+        }
         return handleApi(path);
       }
 
@@ -245,6 +275,8 @@ function handleApi(path: string): Response {
       return Response.json(queries.overview());
     case "/api/recruiters":
       return Response.json(queries.recruiters());
+    case "/api/recruiters/due":
+      return Response.json(queries.recruitersDue());
     case "/api/outreach":
       return Response.json(queries.outreach());
     case "/api/jobs":

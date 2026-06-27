@@ -218,6 +218,40 @@ Thanks for connecting, {Name}! I'm {User} — {Role} at {Company} ({City}), {sta
 
 **If no response after 1 week:** Move on. Don't double-message recruiters.
 
+### 9. Sync acceptances (reconcile pending → accepted)
+
+LinkedIn's MCP has no "who accepted my invitations" tool. The reliable signal is
+**connection degree**: a recruiter recorded as `pending` who now appears in your
+**1st-degree** network has accepted. To detect this without manual checking:
+
+```
+mercury recruiter sync            # dry-run: shows what WOULD change
+mercury recruiter sync --apply    # writes the pending → accepted transitions
+mercury recruiter sync --json     # machine-readable (used by the dashboard)
+```
+
+How it works: for each `pending` recruiter that has a company, it runs a
+first-degree people search (`search_people network=["F"] keywords="<company>
+recruiter"`) and matches returned people back to your pending rows by username
+(preferred) or normalized name. Matches advance to `accepted` (sets
+`accepted_at`). It **only** advances `pending → accepted` — it never touches
+human-confirmed states (`replied`, `interviewing`, `closed`), since those encode
+knowledge the degree signal can't see.
+
+Requirements & notes:
+- Needs the LinkedIn MCP reachable (it drives the search). Companies whose search
+  errors are reported as "skipped", not fatal.
+- Recruiters with no stored `company` are skipped (there's nothing to search).
+- For best matching, store the recruiter's `--username` when you add them. If you
+  later learn it, backfill with `mercury recruiter update --id {id} --username {slug}`
+  (the `update` subcommand now also accepts `--username/--company/--title/--location/--degree`).
+- In the dashboard, the **Recruiters** tab has a **Sync now** button that runs the
+  same reconciliation and surfaces due follow-ups inline.
+
+> Manual fallback (no CLI): re-fetch each pending recruiter's profile and check the
+> degree, or run a 1st-degree company search yourself; flip the ones now showing
+> "1st" to accepted.
+
 ## Gotchas
 
 1. **URN IDs are required** — `current_company="airbnb"` returns unfiltered results (silently ignored)

@@ -100,6 +100,23 @@ export const queries = {
       .all();
   },
 
+  /**
+   * Due follow-up actions from the outreach engine, shaped for the Recruiters
+   * "Sync" view. Surfaces accepted-but-no-reply (and other cadence) prompts.
+   */
+  recruitersDue() {
+    return dueAttempts().map(({ attempt, action }) => ({
+      id: attempt.id,
+      name: attempt.person_name ?? attempt.person_username,
+      username: attempt.person_username,
+      company: attempt.company_name ?? attempt.company_urn,
+      state: attempt.state,
+      action: action.kind,
+      reason: action.reason,
+      due: attempt.next_action_due,
+    }));
+  },
+
   jobs() {
     return db()
       .query(`

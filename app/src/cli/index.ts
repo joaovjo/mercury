@@ -28,7 +28,8 @@ Usage:
 
 Write API (used by skills):
   mercury recruiter add --name <n> [--company --username --title --location --degree --status --note]
-  mercury recruiter update --id <n> [--status --note]
+  mercury recruiter update --id <n> [--status --note --username --company --title --location --degree]
+  mercury recruiter sync [--apply] [--json]                Detect accepted invites (1st-degree) → mark accepted
   mercury outreach log --username <u> --company-urn <n> [--name --company --channel --state --cost --source-skill]
   mercury outreach check --username <u> --company-urn <n>   Blacklist check (exit 1 if blocked)
   mercury outreach update --id <n> --state <s> [--reason]   Transition lifecycle state
