@@ -88,6 +88,15 @@ What it gives you:
 - **Recruiters** — kanban pipeline (pending → accepted → replied → interviewing → closed)
 - **Jobs / Applications / Interviews / Activity** — everything tracked
 
+|  |  |
+|:---:|:---:|
+| ![Overview](.github/assets/dashboard/overview.png) | ![Recruiters](.github/assets/dashboard/recruiters.png) |
+| **Overview** — pipeline health at a glance | **Recruiters** — kanban pipeline + one-click **Sync** to detect accepted invites |
+| ![Launch](.github/assets/dashboard/launch.png) | ![Profile](.github/assets/dashboard/profile.png) |
+| **Launch** — run any skill through your agent, with an optional free-text nudge | **Profile** — recruiter-search visibility charted over time |
+
+> Screenshots use synthetic demo data.
+
 The dashboard is a single Bun-compiled binary with the UI embedded. It binds to
 `127.0.0.1` on a random port with a URL token, and stores everything in a local
 SQLite database at `~/.mercury/mercury.db`.
