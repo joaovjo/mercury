@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-06-27
+
+### Added
+
+- **Recruiter sync (issue #15).** `mercury recruiter sync` reconciles the local
+  `recruiters` table with LinkedIn reality. LinkedIn's MCP exposes no "who
+  accepted my invitations" tool, so acceptance is inferred from connection
+  **degree**: a `pending` recruiter who now appears in your **1st-degree**
+  network has accepted. Detection runs a company-scoped first-degree people
+  search (`search_people network=["F"] keywords="<company> recruiter"`) and
+  matches results back to pending rows by username (preferred) or normalized
+  name. Only advances `pending → accepted` (sets `accepted_at`); it never
+  touches human-confirmed states (`replied`, `interviewing`, `closed`).
+  - **CLI:** `mercury recruiter sync [--apply] [--json]` — dry-run by default;
+    `--apply` writes the transitions and logs a `recruiter_sync` activity.
+  - **Dashboard:** the Recruiters tab gains a **Sync now** button (with a result
+    banner) plus a **Due follow-ups** panel surfaced from the outreach engine.
+  - **Fix:** `mercury recruiter update` previously honored only `--status` and
+    `--note`, silently dropping other flags. It now also accepts
+    `--username/--company/--title/--location/--degree`.
+- **Launch "Additional context" field (issue #16).** The dashboard Launch tab
+  gains an always-visible optional free-text field whose contents are appended
+  (clearly delimited) to the generated skill prompt, so any single run can be
+  nudged ("focus on remote roles, skip crypto", or a pasted JD) without editing
+  the skill or its template. Applies to every skill, including the generic
+  default; when empty the prompt is byte-identical to before. Includes a live
+  character count and a clear button.
+
+### Notes
+
+- Recruiter sync detection needs the LinkedIn MCP reachable (it drives the
+  search); companies whose search errors are reported as "skipped", not fatal.
+  Recruiters with no stored company are skipped (nothing to search).
+
 ## [0.8.0] - 2026-06-27
 
 ### Added
