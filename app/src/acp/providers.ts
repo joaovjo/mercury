@@ -3,6 +3,8 @@
  * speaks the Agent Client Protocol over stdio.
  */
 
+import type { Subprocess } from "bun";
+
 export interface AcpProviderCommand {
   cmd: string[];
   env?: Record<string, string>;
@@ -37,12 +39,23 @@ export const PROVIDERS: Record<string, AcpProvider> = {
     id: "claude-code",
     displayName: "Claude Code",
     bin: "claude",
-    models: [],
+    // Fallback only. At runtime models are discovered live from the adapter
+    // (see probeClaudeCodeModels). These stable aliases are used when that probe
+    // fails (adapter missing, not logged in, timeout); they're what
+    // ANTHROPIC_MODEL accepts and always resolve to the current generation.
+    models: ["opus", "sonnet", "haiku"],
     defaultModel: undefined,
     // Zed's ACP adapter wraps the Claude Code CLI.
     // Model is passed via ANTHROPIC_MODEL env rather than a CLI flag.
     command: (cwd, model) => {
-      const env = model ? { ANTHROPIC_MODEL: model } : undefined;
+      // The adapter refuses to start when it sees CLAUDECODE set (its
+      // nested-session guard). When the dashboard itself is launched from
+      // inside a Claude Code session that var is inherited, which would
+      // otherwise make every claude-code run fail at session/new. Neutralize
+      // the guard for the spawned child; this is the adapter's documented
+      // escape hatch ("unset the CLAUDECODE environment variable").
+      const env: Record<string, string> = { CLAUDECODE: "" };
+      if (model) env.ANTHROPIC_MODEL = model;
       return { cmd: ["npx", "-y", "@zed-industries/claude-code-acp"], env };
     },
   },
@@ -77,11 +90,15 @@ async function runWithTimeout(cmd: string[], timeoutMs: number): Promise<string 
   }
 }
 
-/** Model-list cache. Enumerating models shells out to slow CLIs (`opencode
- *  models`, and `claude config list` can take 15s+), so cache the result per
+/** Model-list cache. Enumerating models is slow (`opencode models`, or spawning
+ *  the Claude Code ACP adapter for a session probe), so cache the result per
  *  provider for the lifetime of the dashboard process with a short TTL. */
 const MODELS_TTL_MS = 5 * 60 * 1000;
 const MODELS_SPAWN_TIMEOUT_MS = 4000;
+// The Claude probe spawns the ACP adapter and runs initialize + session/new,
+// which is heavier than a plain CLI call (npx resolve + adapter boot + session
+// create). Result is cached and warmed on boot, so a generous bound is fine.
+const CLAUDE_PROBE_TIMEOUT_MS = 15000;
 const _modelCache = new Map<string, { at: number; models: string[] }>();
 
 /**
@@ -90,7 +107,7 @@ const _modelCache = new Map<string, { at: number; models: string[] }>();
  * never blocks on a slow or hanging CLI.
  *
  * - OpenCode: runs `opencode models` and parses line-oriented output.
- * - Claude Code: runs `claude config list` and extracts availableModels.
+ * - Claude Code: probes the ACP adapter for its advertised availableModels.
  * - Unknown providers return the static list from the provider definition.
  * Returns an empty array on any error (command missing, timeout, non-zero exit).
  */
@@ -123,49 +140,96 @@ async function listOpenCodeModels(): Promise<string[]> {
 }
 
 async function listClaudeCodeModels(): Promise<string[]> {
-  const out = await runWithTimeout(["claude", "config", "list"], MODELS_SPAWN_TIMEOUT_MS);
-  if (!out) return [];
-  return parseClaudeConfigModels(out);
+  // The Claude Code CLI has no model-enumeration command, but the ACP adapter
+  // advertises its own `availableModels` on session/new. Probe that live so new
+  // models are discovered automatically; fall back to the provider's stable
+  // aliases only if the probe fails (adapter missing, not logged in, timeout).
+  const probed = await probeClaudeCodeModels(CLAUDE_PROBE_TIMEOUT_MS);
+  return probed.length ? probed : PROVIDERS["claude-code"]?.models ?? [];
 }
 
-function parseClaudeConfigModels(out: string): string[] {
-  const trimmed = out.trim();
-  if (!trimmed) return [];
-
-  const fromJson = parseClaudeConfigJson(trimmed);
-  if (fromJson.length) return fromJson;
-
-  const models = new Set<string>();
-  const lines = trimmed.split("\n");
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!.trim();
-    const match = line.match(/^availableModels\s*[:=]\s*(.+)$/i);
-    if (!match) continue;
-    collectModelTokens(match[1]!, models);
-    for (let j = i + 1; j < lines.length; j++) {
-      const next = lines[j]!.trim();
-      if (!next || /^[A-Za-z][A-Za-z0-9_-]*\s*[:=]/.test(next)) break;
-      collectModelTokens(next, models);
-    }
-  }
-  return [...models];
-}
-
-function parseClaudeConfigJson(out: string): string[] {
+/**
+ * Enumerate Claude Code models by running a minimal ACP handshake against the
+ * adapter (initialize → session/new) and reading the `availableModels` it
+ * advertises. Auto-discovers the installed CLI's real lineup instead of relying
+ * on a hardcoded list. Bounded by `timeoutMs`; returns [] on any failure.
+ */
+async function probeClaudeCodeModels(timeoutMs: number): Promise<string[]> {
+  const cwd = process.cwd();
+  const { cmd, env } = PROVIDERS["claude-code"]!.command(cwd);
+  let proc: Subprocess<"pipe", "pipe", "ignore"> | null = null;
   try {
-    const config = JSON.parse(out) as { availableModels?: unknown };
-    return Array.isArray(config.availableModels)
-      ? config.availableModels.filter((m): m is string => typeof m === "string" && m.length > 0)
-      : [];
+    proc = Bun.spawn(cmd, {
+      cwd,
+      stdin: "pipe",
+      stdout: "pipe",
+      stderr: "ignore",
+      env: env ? { ...process.env, ...env } : undefined,
+    });
+    const p = proc;
+    const handshake = (async (): Promise<string[]> => {
+      const reader = p.stdout.getReader();
+      const decoder = new TextDecoder();
+      const pending = new Map<number, (v: any) => void>();
+      let buf = "";
+      let nextId = 1;
+      const send = (m: unknown) => {
+        p.stdin.write(JSON.stringify(m) + "\n");
+        p.stdin.flush?.();
+      };
+      const request = (method: string, params: unknown) =>
+        new Promise<any>((resolve) => {
+          const id = nextId++;
+          pending.set(id, resolve);
+          send({ jsonrpc: "2.0", id, method, params });
+        });
+      // Pump stdout: resolve our requests and null-answer any agent callback so
+      // the adapter never blocks waiting on us during the probe.
+      void (async () => {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          let nl: number;
+          while ((nl = buf.indexOf("\n")) !== -1) {
+            const line = buf.slice(0, nl).trim();
+            buf = buf.slice(nl + 1);
+            if (!line) continue;
+            let msg: any;
+            try {
+              msg = JSON.parse(line);
+            } catch {
+              continue;
+            }
+            if (msg.id !== undefined && (msg.result !== undefined || msg.error !== undefined)) {
+              pending.get(msg.id)?.(msg.error ? null : msg.result);
+              pending.delete(msg.id);
+            } else if (msg.method && msg.id !== undefined) {
+              send({ jsonrpc: "2.0", id: msg.id, result: null });
+            }
+          }
+        }
+      })();
+      await request("initialize", {
+        protocolVersion: 1,
+        clientCapabilities: { fs: { readTextFile: true, writeTextFile: true } },
+      });
+      const session = await request("session/new", { cwd, mcpServers: [] });
+      const available = session?.models?.availableModels;
+      if (!Array.isArray(available)) return [];
+      // Drop "default" — the UI already offers a Default entry, and an empty
+      // model selection is what triggers the provider's own default.
+      return available
+        .map((m: any) => (typeof m?.modelId === "string" ? m.modelId : null))
+        .filter((id: unknown): id is string => typeof id === "string" && id.length > 0 && id !== "default");
+    })();
+    const timeout = new Promise<string[]>((resolve) => setTimeout(() => resolve([]), timeoutMs));
+    return await Promise.race([handshake, timeout]);
   } catch {
     return [];
-  }
-}
-
-function collectModelTokens(text: string, models: Set<string>): void {
-  const cleaned = text.replace(/[\[\]",]/g, " ");
-  for (const token of cleaned.split(/\s+/)) {
-    const model = token.trim();
-    if (model && model !== "[]") models.add(model);
+  } finally {
+    try {
+      proc?.kill("SIGKILL");
+    } catch {}
   }
 }

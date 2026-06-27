@@ -23,6 +23,11 @@ the candidate's profile, level, stack, and preferences.
   Required for the "pasted URL" workflow below; the keyword workflow can run on
   LinkedIn MCP alone.
 
+**Preflight (do this first):** run `mercury linkedin reset` once before your
+first LinkedIn MCP call. It clears stale browser sessions/locks the previous run
+may have left behind (the usual cause of `search_jobs` failing, especially on
+Windows). Harmless if there's nothing to clean.
+
 ## Two Entry Points
 
 job-scout supports two ways to start:
@@ -134,12 +139,20 @@ From the user, establish:
 
 ### 2. Search Jobs
 
-Run parallel searches:
+Run the searches **one at a time, not in parallel**. The LinkedIn MCP drives a
+single shared headless browser, so concurrent `search_jobs` calls collide and
+fail — issue them sequentially and wait for each to return before the next:
 ```
 search_jobs(keywords="{company} software engineer", location="{city}", max_pages=2)
+# ...then:
 search_jobs(keywords="backend software engineer", location="{city}", work_type="remote", max_pages=2)
+# ...then:
 search_jobs(keywords="{niche_skill} engineer", location="{country}", work_type="remote", max_pages=2)
 ```
+
+If a `search_jobs` call still fails (a stale browser session from a prior run is
+holding the profile — common on Windows), run `mercury linkedin reset` once to
+clear it, then retry the call.
 
 ### 3. Get Details for Top Matches
 

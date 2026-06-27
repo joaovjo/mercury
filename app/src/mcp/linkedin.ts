@@ -1,6 +1,8 @@
+import { platform } from "node:os";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { loadConfig } from "../paths.ts";
+import { sweepLinkedinBrowsers } from "../cli/linkedin.ts";
 
 /**
  * Thin wrapper around the LinkedIn MCP server (stdio). Lazily spawns the
@@ -18,6 +20,11 @@ async function connect(): Promise<Client> {
   if (_connecting) return _connecting;
 
   _connecting = (async () => {
+    // On Windows the LinkedIn MCP leaves orphaned headless browsers that lock
+    // the persistent profile and make the next launch fail. Sweep them before
+    // spawning so we start clean. No-op-ish elsewhere (see sweepLinkedinBrowsers).
+    if (platform() === "win32") await sweepLinkedinBrowsers().catch(() => {});
+
     const cfg = loadConfig();
     const cmd = cfg.linkedinMcpCommand ?? DEFAULT_CMD;
     const transport = new StdioClientTransport({

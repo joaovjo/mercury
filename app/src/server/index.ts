@@ -1,5 +1,5 @@
 import { existsSync, writeFileSync, unlinkSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Flags } from "../cli/flags.ts";
 import { int, str } from "../cli/flags.ts";
@@ -24,6 +24,34 @@ function webDir(): string {
   return candidates.find((c) => existsSync(c)) ?? candidates[0]!;
 }
 
+/**
+ * Resolve the Mercury workspace the agent should run in. This is the directory
+ * the spawned agent uses as its cwd / ACP session root, so it must be where the
+ * project-scoped skills (.claude/skills) and project config (.mcp.json, base
+ * resume in .mercury) live — otherwise the agent can't load the Mercury skills.
+ *
+ * Order: explicit --cwd/--workspace flag → nearest ancestor of the launch dir
+ * holding a Mercury marker → the launch dir itself. Walking up matters because
+ * the dashboard may be started from a nested dir (e.g. the source checkout)
+ * rather than the workspace root.
+ */
+function resolveWorkspace(flags: Flags): string {
+  const explicit = str(flags, "cwd") ?? str(flags, "workspace");
+  if (explicit) return resolve(explicit);
+  let dir = process.cwd();
+  for (;;) {
+    const hasSkills = existsSync(join(dir, ".claude", "skills"));
+    const projData = join(dir, ".mercury");
+    // Project .mercury is a marker too, but ignore the global ~/.mercury home.
+    const hasProjData = existsSync(projData) && resolve(projData) !== resolve(paths.home);
+    if (hasSkills || hasProjData) return dir;
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return process.cwd();
+}
+
 type WSData = { token: string };
 
 export async function dashboardCmd(flags: Flags): Promise<void> {
@@ -39,7 +67,11 @@ export async function dashboardCmd(flags: Flags): Promise<void> {
   let updateRunning = false;
 
   // ACP session manager — forwards agent updates to all connected sockets.
-  const acp = new SessionManager(process.cwd(), (event) => broadcast(sockets, event));
+  // Agents run in the resolved Mercury workspace so they can load the
+  // project-scoped skills and MCP servers, regardless of where the dashboard
+  // process was launched from.
+  const workspace = resolveWorkspace(flags);
+  const acp = new SessionManager(workspace, (event) => broadcast(sockets, event));
 
   const server = Bun.serve<WSData>({
     port,
@@ -179,7 +211,7 @@ export async function dashboardCmd(flags: Flags): Promise<void> {
 
   // Warm the provider/model cache in the background so the first visit to
   // Launch/Profile (which call /api/acp/providers) doesn't pay the cold-start
-  // cost of shelling out to `opencode models` / `claude config list`.
+  // cost of enumerating models (`opencode models` / the Claude Code ACP probe).
   void Promise.all(
     Object.values(PROVIDERS).map((p) => listProviderModels(p.id).catch(() => [])),
   );
@@ -194,7 +226,8 @@ export async function dashboardCmd(flags: Flags): Promise<void> {
   process.on("SIGTERM", cleanup);
 
   const dashUrl = `http://127.0.0.1:${server.port}/?token=${token}`;
-  console.log(`\n  Mercury dashboard running at:\n  ${dashUrl}\n`);
+  console.log(`\n  Mercury dashboard running at:\n  ${dashUrl}`);
+  console.log(`  Agent workspace: ${workspace}\n`);
   if (!noOpen) await openBrowser(dashUrl);
 }
 
