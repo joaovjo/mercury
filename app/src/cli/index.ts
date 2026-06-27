@@ -22,6 +22,7 @@ Usage:
   mercury setup [--agent <id>] [--all] [--skills-dir <p>]  Install skills into your agent(s)
   mercury init                       Scaffold ~/.mercury/ + database
   mercury update [--force]          Update Mercury to the latest release
+  mercury linkedin reset             Clear stale LinkedIn MCP browser sessions + locks
   mercury dashboard [--port N] [--no-open] [--provider opencode|claude-code]
   mercury import-journey <FILE.md>   Migrate a legacy JOURNEY.md into the db
 
@@ -138,6 +139,11 @@ async function main() {
     case "activity":
       await activityCmd(flags);
       break;
+    case "linkedin": {
+      const { linkedinCmd } = await import("./linkedin.ts");
+      await linkedinCmd(positionals[0] ?? "", flags);
+      break;
+    }
     default:
       console.error(`unknown command: ${cmd}\n`);
       console.log(HELP);
