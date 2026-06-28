@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-06-27
+
+### Changed
+
+- **Build: stop committing the generated `assets.gen.ts` (issue #20).** The
+  base64-inlined `web/dist` bundle is now a gitignored build artifact rather
+  than a tracked file, so parallel dashboard-UI PRs no longer conflict on it.
+  A new `scripts/ensure-assets.ts` writes an empty stub when the file is missing
+  (wired as a prestep for `dev`/`typecheck`/`test`/`build:bin`), so a fresh clone
+  type-checks, tests, and runs from source with no web build; `build` /
+  `build:targets` still embed the real bundle into the compiled binary. No
+  user-facing or runtime change.
+
 ## [0.9.0] - 2026-06-27
 
 ### Added
