@@ -83,9 +83,13 @@ bun run build               # build:web → embed assets → compile single bina
    `src/server/assets.gen.ts` (so the binary is self-contained)
 3. `build:bin` — `bun build --compile` → `app/dist/mercury`
 
-> **Convention:** `app/src/server/assets.gen.ts` is generated. Keep it committed
-> as an **empty** map (`export const EMBEDDED_ASSETS = {}`) — the build regenerates
-> it. Reset it to empty before committing so diffs stay clean.
+> **Convention:** `app/src/server/assets.gen.ts` is a **generated, gitignored**
+> artifact (issue #20) — never commit or hand-edit it. `dev`, `typecheck`, `test`,
+> and `build:bin` auto-create an empty stub via `scripts/ensure-assets.ts` if it's
+> missing (a fresh clone needs no web build to type-check or test). The full
+> `build`/`build:targets` overwrite it with the real base64 bundle via `embed`.
+> Only the compiled binary uses the embedded assets; source/dev runs serve the UI
+> from `web/dist` on disk.
 
 ### Installing your local build
 

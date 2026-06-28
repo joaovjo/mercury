@@ -7,15 +7,16 @@
     "mercury": "./dist/mercury"
   },
   "scripts": {
-    "dev": "bun run src/cli/index.ts",
+    "dev": "bun run ensure-assets && bun run src/cli/index.ts",
     "build": "bun run gen:version && bun run build:web && bun run embed && bun run build:bin",
     "gen:version": "bun run scripts/gen-version.ts",
     "build:web": "cd web && bun install && bun run build",
     "embed": "bun run scripts/embed-assets.ts",
-    "build:bin": "bun build src/cli/index.ts --compile --outfile dist/mercury",
+    "ensure-assets": "bun run scripts/ensure-assets.ts",
+    "build:bin": "bun run ensure-assets && bun build src/cli/index.ts --compile --outfile dist/mercury",
     "build:targets": "bun run gen:version && bun run build:web && bun run embed && bun run scripts/build-targets.ts",
-    "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "typecheck": "bun run ensure-assets && tsc --noEmit",
+    "test": "bun run ensure-assets && bun test"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0"
