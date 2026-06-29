@@ -1,3 +1,6 @@
+import { $ } from "bun";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import type { Flags } from "./flags.ts";
 import { getUpdateStatus } from "../update-check.ts";
 
@@ -10,9 +13,16 @@ export type UpdateEvent =
   | { type: "done"; code: number };
 
 export async function runUpdate(onEvent?: (event: UpdateEvent) => void): Promise<number> {
-  const url = `'${BOOTSTRAP_URL.replaceAll("'", "'\\''")}'`;
-  const proc = Bun.spawn(["bash", "-c", `set -o pipefail; curl -fsSL ${url} | bash`], {
-    stdin: "inherit",
+  // Download bootstrap.ts to a temp file, then run with bun
+  const tmpFile = join(tmpdir(), `mercury-update-${Date.now()}.ts`);
+  const dl = await $`curl -fsSL ${BOOTSTRAP_URL} -o ${tmpFile}`.nothrow();
+  if (dl.exitCode !== 0) {
+    onEvent?.({ type: "line", stream: "stderr", text: "Failed to download update script.\n" });
+    onEvent?.({ type: "done", code: 1 });
+    return 1;
+  }
+
+  const proc = Bun.spawn(["bun", "run", tmpFile], {
     stdout: "pipe",
     stderr: "pipe",
     env: process.env,
@@ -24,8 +34,9 @@ export async function runUpdate(onEvent?: (event: UpdateEvent) => void): Promise
   ]);
 
   const code = await proc.exited;
+  await $`rm -f ${tmpFile}`.nothrow();
   onEvent?.({ type: "done", code });
-  return code;
+  return typeof code === "number" ? code : 1;
 }
 
 export async function updateCmd(flags: Flags = {}): Promise<void> {

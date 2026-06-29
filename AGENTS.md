@@ -46,10 +46,11 @@ app/
 │   ├── mcp/        # LinkedIn MCP client + hybrid search
 │   ├── acp/        # ACP client, provider registry, session manager
 │   └── paths.ts    # ~/.mercury path resolution + config
+├── scripts/
+│   ├── bootstrap.ts  # curl|bun installer/updater (prebuilt binary + source fallback)
+│   └── install.ts    # local dev installer (bun run install:ts)
 └── web/            # Svelte 5 dashboard (Vite build → embedded into the binary)
 skills/             # the agent skills (copied into agent dirs by `mercury setup`)
-app/scripts/bootstrap.ts  # curl|bun installer/updater (prebuilt binary + source fallback)
-app/scripts/install.ts    # local dev installer (bun run install:ts)
 ```
 
 ### The `.mercury/` user data dir
