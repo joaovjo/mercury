@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { existsSync, mkdirSync, readdirSync, statSync, copyFileSync, rmSync } from "node:fs";
 import { VERSION } from "../version.gen.ts";
 
-const REPO_SLUG = process.env.MERCURY_REPO_SLUG ?? "Daniel-Boll/mercury";
+const REPO_SLUG = process.env.MERCURY_REPO_SLUG ?? "joaovjo/mercury";
 
 /**
  * Locate the repo's `skills/` directory. Mercury is distributed as a single

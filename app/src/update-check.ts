@@ -23,9 +23,9 @@ const FETCH_TIMEOUT_MS = 1500;
  */
 const RELEASES_API =
   process.env.MERCURY_UPDATE_URL ??
-  "https://api.github.com/repos/Daniel-Boll/mercury/releases/latest";
+  "https://api.github.com/repos/joaovjo/mercury/releases/latest";
 const INSTALL_CMD =
-  "curl -fsSL https://raw.githubusercontent.com/Daniel-Boll/mercury/main/bootstrap.sh | bash";
+  "curl -fsSL https://raw.githubusercontent.com/joaovjo/mercury/main/app/scripts/bootstrap.ts | bun run -";
 
 interface UpdateCache {
   /** Last time we hit the network (epoch ms). */

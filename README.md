@@ -32,13 +32,14 @@ Mercury is a collection of **AI agent skills** that automate your LinkedIn job s
 
 ```bash
 # install (or update) — downloads a prebuilt binary and installs the skills
-curl -fsSL https://raw.githubusercontent.com/Daniel-Boll/mercury/main/bootstrap.sh | bash
+# Bash / zsh:
+curl -fsSL https://raw.githubusercontent.com/joaovjo/mercury/main/app/scripts/bootstrap.ts | bun run -
 
-mercury setup        # copy skills into your detected agents (opencode, Claude Code, …)
-mercury dashboard    # open the hub in your browser
+# PowerShell 7.x+:
+irm https://raw.githubusercontent.com/joaovjo/mercury/main/app/scripts/bootstrap.ts | bun run -
 ```
 
-Re-run the **same `curl` command any time to update**. See [Installation](#installation) for prebuilt targets, env overrides, and the source-build fallback.
+Re-run the **same command any time to update**. See [Installation](#installation) for prebuilt targets, env overrides, and the source-build fallback.
 
 ## The Pipeline
 
@@ -169,12 +170,16 @@ into LinkedIn in that session.
 ## Installation
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Daniel-Boll/mercury/main/bootstrap.sh | bash
+# Bash / zsh:
+curl -fsSL https://raw.githubusercontent.com/joaovjo/mercury/main/app/scripts/bootstrap.ts | bun run -
+
+# PowerShell 7.x+:
+irm https://raw.githubusercontent.com/joaovjo/mercury/main/app/scripts/bootstrap.ts | bun run -
 ```
 
 The one-liner installs (or updates) Mercury and copies the skills:
 
-- detects your OS/arch and **downloads a prebuilt binary** from the latest [GitHub Release](https://github.com/Daniel-Boll/mercury/releases) (SHA256-verified) → `~/.local/bin/mercury` — no build, just `curl`;
+- detects your OS/arch and **downloads a prebuilt binary** from the latest [GitHub Release](https://github.com/joaovjo/mercury/releases) (SHA256-verified) → `~/.local/bin/mercury` — no build, just `curl`;
 - copies the skills into detected agent dirs (`~/.config/opencode/skills`, `~/.claude/skills`);
 - **falls back to a source build** with [Bun](https://bun.sh) if no prebuilt binary matches your platform.
 

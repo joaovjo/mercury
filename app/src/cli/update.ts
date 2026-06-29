@@ -3,7 +3,7 @@ import { getUpdateStatus } from "../update-check.ts";
 
 const BOOTSTRAP_URL =
   process.env.MERCURY_BOOTSTRAP_URL ??
-  "https://raw.githubusercontent.com/Daniel-Boll/mercury/main/bootstrap.sh";
+  "https://raw.githubusercontent.com/joaovjo/mercury/main/app/scripts/bootstrap.ts";
 
 export type UpdateEvent =
   | { type: "line"; stream: "stdout" | "stderr"; text: string }

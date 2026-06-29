@@ -48,7 +48,8 @@ app/
 │   └── paths.ts    # ~/.mercury path resolution + config
 └── web/            # Svelte 5 dashboard (Vite build → embedded into the binary)
 skills/             # the agent skills (copied into agent dirs by `mercury setup`)
-bootstrap.sh        # curl|bash installer/updater (prebuilt binary + source fallback)
+app/scripts/bootstrap.ts  # curl|bun installer/updater (prebuilt binary + source fallback)
+app/scripts/install.ts    # local dev installer (bun run install:ts)
 ```
 
 ### The `.mercury/` user data dir
@@ -148,7 +149,7 @@ one). Keep an `## [Unreleased]` section at the top for in-flight changes.
 
 ### Update check internals
 
-`mercury` checks the [Releases API](https://api.github.com/repos/Daniel-Boll/mercury/releases/latest)
+`mercury` checks the [Releases API](https://api.github.com/repos/joaovjo/mercury/releases/latest)
 at most once per 10h (cached in `~/.mercury/update-check.json`) and prints a
 one-line stderr notice when a newer tag exists. Best-effort: short timeout, never
 blocks, silent when offline. Disable with `MERCURY_NO_UPDATE_CHECK=1`; redirect
