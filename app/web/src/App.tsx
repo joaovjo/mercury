@@ -12,10 +12,9 @@ import {
   CalendarCheckIcon,
   ActivityIcon,
   DownloadSimpleIcon,
-  SunIcon,
-  MoonIcon,
   ListIcon,
 } from "@phosphor-icons/react";
+import { FormattedMessage, useIntl } from "react-intl";
 import { useResource } from "@/hooks/useResource";
 import { useLiveTable } from "@/hooks/useLiveTable";
 import { useTheme } from "@/components/theme-provider";
@@ -23,6 +22,7 @@ import { api, onConnection, post, subscribe } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ModeToggle } from "@/components/mode-toggle";
+import { LocaleToggle } from "@/components/locale-toggle";
 
 import { OverviewSection } from "@/sections/OverviewSection";
 import { ProfileSection } from "@/sections/ProfileSection";
@@ -39,20 +39,21 @@ import { ActivitySection } from "@/sections/ActivitySection";
 import type { OverviewData, UpdateStatusData } from "@/types";
 
 const NAV_ITEMS = [
-  { id: "overview", label: "Overview", icon: SquaresFourIcon },
-  { id: "profile", label: "Profile", icon: UserIcon },
-  { id: "search", label: "Search", icon: MagnifyingGlassIcon },
-  { id: "launch", label: "Launch", icon: RocketLaunchIcon },
-  { id: "recruiters", label: "Recruiters", icon: UsersIcon },
-  { id: "outreach", label: "Outreach", icon: PaperPlaneTiltIcon },
-  { id: "jobs", label: "Jobs", icon: BriefcaseIcon },
-  { id: "applications", label: "Applications", icon: FileTextIcon },
-  { id: "answers", label: "Answers", icon: ClipboardTextIcon },
-  { id: "interviews", label: "Interviews", icon: CalendarCheckIcon },
-  { id: "activity", label: "Activity", icon: ActivityIcon },
+  { id: "overview", labelId: "nav.overview", defaultLabel: "Overview", icon: SquaresFourIcon },
+  { id: "profile", labelId: "nav.profile", defaultLabel: "Profile", icon: UserIcon },
+  { id: "search", labelId: "nav.search", defaultLabel: "Search", icon: MagnifyingGlassIcon },
+  { id: "launch", labelId: "nav.launch", defaultLabel: "Launch", icon: RocketLaunchIcon },
+  { id: "recruiters", labelId: "nav.recruiters", defaultLabel: "Recruiters", icon: UsersIcon },
+  { id: "outreach", labelId: "nav.outreach", defaultLabel: "Outreach", icon: PaperPlaneTiltIcon },
+  { id: "jobs", labelId: "nav.jobs", defaultLabel: "Jobs", icon: BriefcaseIcon },
+  { id: "applications", labelId: "nav.applications", defaultLabel: "Applications", icon: FileTextIcon },
+  { id: "answers", labelId: "nav.answers", defaultLabel: "Answers", icon: ClipboardTextIcon },
+  { id: "interviews", labelId: "nav.interviews", defaultLabel: "Interviews", icon: CalendarCheckIcon },
+  { id: "activity", labelId: "nav.activity", defaultLabel: "Activity", icon: ActivityIcon },
 ];
 
 export function App() {
+  const intl = useIntl();
   const [active, setActive] = useState<string>(() => {
     if (typeof window !== "undefined") {
       const hash = window.location.hash.replace(/^#/, "");
@@ -93,13 +94,13 @@ export function App() {
         setUpdateOutput((prev) =>
           prev +
           (event.code === 0
-            ? "\nUpdate complete. Restart the dashboard to use the new binary.\n"
-            : `\nUpdate failed with exit code ${event.code}.\n`)
+            ? `\n${intl.formatMessage({ id: "app.update.complete", defaultMessage: "Update complete. Restart the dashboard to use the new binary." })}\n`
+            : `\n${intl.formatMessage({ id: "app.update.failed", defaultMessage: "Update failed with exit code {code}." }, { code: event.code })}\n`)
         );
         updateStatus.reload();
       }
     });
-  }, [updateStatus]);
+  }, [updateStatus, intl]);
 
   function handleNavigate(id: string) {
     setActive(id);
@@ -111,7 +112,7 @@ export function App() {
 
   async function handleStartUpdate() {
     setUpdating(true);
-    setUpdateOutput("Starting update...\n");
+    setUpdateOutput(intl.formatMessage({ id: "app.update.starting", defaultMessage: "Starting update...\n" }));
     try {
       await post("update");
     } catch (err: unknown) {
@@ -121,7 +122,10 @@ export function App() {
   }
 
   const ov = overview.data;
-  const activeLabel = NAV_ITEMS.find((n) => n.id === active)?.label ?? "Overview";
+  const activeItem = NAV_ITEMS.find((n) => n.id === active);
+  const activeLabel = activeItem
+    ? intl.formatMessage({ id: activeItem.labelId, defaultMessage: activeItem.defaultLabel })
+    : "Overview";
   const updateAvailable =
     updateStatus.status === "ready" && updateStatus.data?.updateAvailable;
 
@@ -133,8 +137,12 @@ export function App() {
           <RocketLaunchIcon className="size-5" />
         </div>
         <div className="leading-tight">
-          <h1 className="text-base font-bold tracking-tight text-foreground">Mercury</h1>
-          <p className="text-xs text-muted-foreground">AI Job Companion</p>
+          <h1 className="text-base font-bold tracking-tight text-foreground">
+            <FormattedMessage id="app.brand.name" defaultMessage="Mercury" />
+          </h1>
+          <p className="text-xs text-muted-foreground">
+            <FormattedMessage id="app.brand.tagline" defaultMessage="AI Job Companion" />
+          </p>
         </div>
       </div>
 
@@ -143,6 +151,7 @@ export function App() {
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = active === item.id;
+          const label = intl.formatMessage({ id: item.labelId, defaultMessage: item.defaultLabel });
           return (
             <button
               key={item.id}
@@ -154,7 +163,7 @@ export function App() {
               }`}
             >
               <Icon className="size-4 shrink-0" />
-              <span className="flex-1 truncate">{item.label}</span>
+              <span className="flex-1 truncate">{label}</span>
               {item.id === "recruiters" && ov?.recruiters != null && (
                 <span className={`text-[0.68rem] px-1.5 py-0.2 rounded-full ${isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
                   {ov.recruiters}
@@ -175,15 +184,23 @@ export function App() {
         })}
       </nav>
 
-      {/* Footer / Update status + Live indicator + Theme */}
+      {/* Footer / Update status + Live indicator + Locale + Theme */}
       <div className="mt-auto pt-4 border-t border-border space-y-3">
         {updateAvailable ? (
           <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs">
             <div className="font-semibold text-foreground mb-1">
-              Mercury {updateStatus.data?.latest} available
+              <FormattedMessage
+                id="app.update.available"
+                defaultMessage="Mercury {version} available"
+                values={{ version: updateStatus.data?.latest }}
+              />
             </div>
             <div className="text-muted-foreground mb-2 text-[0.7rem]">
-              You have {updateStatus.data?.current}
+              <FormattedMessage
+                id="app.update.current"
+                defaultMessage="You have {version}"
+                values={{ version: updateStatus.data?.current }}
+              />
             </div>
             <Button
               size="xs"
@@ -193,7 +210,9 @@ export function App() {
               onClick={handleStartUpdate}
             >
               <DownloadSimpleIcon className="size-3.5 mr-1" />
-              {updating ? "Updating..." : "Update now"}
+              {updating
+                ? intl.formatMessage({ id: "app.update.updating", defaultMessage: "Updating..." })
+                : intl.formatMessage({ id: "app.update.button", defaultMessage: "Update now" })}
             </Button>
             {updateOutput && (
               <pre className="mt-2 max-h-24 overflow-y-auto whitespace-pre-wrap text-[0.65rem] font-mono text-muted-foreground bg-background/80 p-2 rounded border border-border">
@@ -214,10 +233,17 @@ export function App() {
                 connected ? "bg-emerald-500 shadow-xs shadow-emerald-500" : "bg-muted-foreground/40"
               }`}
             />
-            <span className="text-[0.75rem]">{connected ? "live" : "offline"}</span>
+            <span className="text-[0.75rem]">
+              {connected
+                ? intl.formatMessage({ id: "app.status.live", defaultMessage: "live" })
+                : intl.formatMessage({ id: "app.status.offline", defaultMessage: "offline" })}
+            </span>
           </div>
 
-          <ModeToggle />
+          <div className="flex items-center gap-1">
+            <LocaleToggle />
+            <ModeToggle />
+          </div>
         </div>
       </div>
     </div>
@@ -253,7 +279,9 @@ export function App() {
 
             {/* Breadcrumb */}
             <div className="flex items-center text-xs font-medium text-muted-foreground">
-              <span>Workspace</span>
+              <span>
+                <FormattedMessage id="app.workspace" defaultMessage="Workspace" />
+              </span>
               <span className="mx-2 opacity-30">/</span>
               <span className="text-foreground font-semibold">{activeLabel}</span>
             </div>
@@ -266,11 +294,18 @@ export function App() {
                   connected ? "bg-emerald-500 shadow-xs shadow-emerald-500" : "bg-muted-foreground/40"
                 }`}
               />
-              <span className="text-[0.75rem]">{connected ? "live" : "offline"}</span>
+              <span className="text-[0.75rem]">
+                {connected
+                  ? intl.formatMessage({ id: "app.status.live", defaultMessage: "live" })
+                  : intl.formatMessage({ id: "app.status.offline", defaultMessage: "offline" })}
+              </span>
             </div>
 
-            <div className="md:hidden">
-              <ModeToggle />
+            <div className="flex items-center gap-1">
+              <LocaleToggle />
+              <div className="md:hidden">
+                <ModeToggle />
+              </div>
             </div>
           </div>
         </header>
@@ -297,3 +332,4 @@ export function App() {
 }
 
 export default App;
+

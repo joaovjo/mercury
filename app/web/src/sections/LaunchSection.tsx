@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { PlayIcon, XIcon, GearSixIcon, TerminalWindowIcon } from "@phosphor-icons/react";
+import { FormattedMessage, useIntl } from "react-intl";
 import { api, post, subscribe } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,15 +19,16 @@ interface LogEntry {
   text: string;
 }
 
-const skills = [
-  { id: "job-scout", label: "Job Scout" },
-  { id: "experience-bank", label: "Experience Bank (grill me)" },
-  { id: "recruiter-outreach", label: "Recruiter Outreach" },
-  { id: "profile-optimizer", label: "Profile Optimizer" },
-  { id: "resume-tailor", label: "Resume Tailor" },
+const skillOptions = [
+  { id: "job-scout", labelId: "launch.skills.jobScout", defaultLabel: "Job Scout" },
+  { id: "experience-bank", labelId: "launch.skills.experienceBank", defaultLabel: "Experience Bank (grill me)" },
+  { id: "recruiter-outreach", labelId: "launch.skills.recruiterOutreach", defaultLabel: "Recruiter Outreach" },
+  { id: "profile-optimizer", labelId: "launch.skills.profileOptimizer", defaultLabel: "Profile Optimizer" },
+  { id: "resume-tailor", labelId: "launch.skills.resumeTailor", defaultLabel: "Resume Tailor" },
 ];
 
 export function LaunchSection() {
+  const intl = useIntl();
   const [providers, setProviders] = useState<AcpProvider[]>([]);
   const [provider, setProvider] = useState("opencode");
   const [model, setModel] = useState("");
@@ -128,8 +130,12 @@ export function LaunchSection() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Launch</h1>
-        <p className="text-muted-foreground text-sm mt-1">Run a Mercury skill through your agent in real time</p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          <FormattedMessage id="launch.title" defaultMessage="Launch" />
+        </h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          <FormattedMessage id="launch.subtitle" defaultMessage="Run a Mercury skill through your agent in real time" />
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[520px]">
@@ -137,16 +143,19 @@ export function LaunchSection() {
         <div className="lg:col-span-5 flex flex-col rounded-xl border border-border bg-card overflow-hidden shadow-xs">
           <div className="px-5 py-4 border-b border-border bg-muted/20">
             <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <GearSixIcon className="size-4 text-muted-foreground" /> Configuration
+              <GearSixIcon className="size-4 text-muted-foreground" />{" "}
+              <FormattedMessage id="launch.config.title" defaultMessage="Configuration" />
             </h2>
           </div>
 
           <div className="p-5 flex-1 space-y-4 overflow-y-auto">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Agent</label>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <FormattedMessage id="launch.config.agent" defaultMessage="Agent" />
+              </label>
               <Select value={provider} onValueChange={(val) => setProvider(val || "opencode")}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select an Agent" />
+                  <SelectValue placeholder={intl.formatMessage({ id: "launch.config.selectAgent", defaultMessage: "Select an Agent" })} />
                 </SelectTrigger>
                 <SelectContent>
                   {providers.map((p) => (
@@ -159,13 +168,17 @@ export function LaunchSection() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Model</label>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <FormattedMessage id="launch.config.model" defaultMessage="Model" />
+              </label>
               <Select value={model} onValueChange={(val) => setModel(val || "")}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Default" />
+                  <SelectValue placeholder={intl.formatMessage({ id: "launch.config.defaultModel", defaultMessage: "Default" })} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="default">Default</SelectItem>
+                  <SelectItem value="default">
+                    {intl.formatMessage({ id: "launch.config.defaultModel", defaultMessage: "Default" })}
+                  </SelectItem>
                   {availableModels.map((m) => (
                     <SelectItem key={m} value={m}>
                       {m}
@@ -176,15 +189,17 @@ export function LaunchSection() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Skill</label>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <FormattedMessage id="launch.config.skill" defaultMessage="Skill" />
+              </label>
               <Select value={skill} onValueChange={(val) => setSkill(val || "job-scout")}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a skill" />
+                  <SelectValue placeholder={intl.formatMessage({ id: "launch.config.selectSkill", defaultMessage: "Select a skill" })} />
                 </SelectTrigger>
                 <SelectContent>
-                  {skills.map((s) => (
+                  {skillOptions.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
-                      {s.label}
+                      {intl.formatMessage({ id: s.labelId, defaultMessage: s.defaultLabel })}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -196,11 +211,19 @@ export function LaunchSection() {
               {skill === "job-scout" && (
                 <>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Query</label>
-                    <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="backend engineer" />
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      <FormattedMessage id="launch.config.query" defaultMessage="Query" />
+                    </label>
+                    <Input
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder={intl.formatMessage({ id: "launch.config.queryPlaceholder", defaultMessage: "backend engineer" })}
+                    />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Location</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      <FormattedMessage id="launch.config.location" defaultMessage="Location" />
+                    </label>
                     <Input value={location} onChange={(e) => setLocation(e.target.value)} />
                   </div>
                 </>
@@ -209,11 +232,19 @@ export function LaunchSection() {
               {skill === "recruiter-outreach" && (
                 <>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Company</label>
-                    <Input value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Airbnb" />
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      <FormattedMessage id="launch.config.company" defaultMessage="Company" />
+                    </label>
+                    <Input
+                      value={company}
+                      onChange={(e) => setCompany(e.target.value)}
+                      placeholder={intl.formatMessage({ id: "launch.config.companyPlaceholder", defaultMessage: "Airbnb" })}
+                    />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Location</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      <FormattedMessage id="launch.config.location" defaultMessage="Location" />
+                    </label>
                     <Input value={location} onChange={(e) => setLocation(e.target.value)} />
                   </div>
                 </>
@@ -221,29 +252,51 @@ export function LaunchSection() {
 
               {skill === "resume-tailor" && (
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Job IDs (comma-sep)</label>
-                  <Input value={jobIds} onChange={(e) => setJobIds(e.target.value)} placeholder="4393940374, 3969556398" />
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    <FormattedMessage id="launch.config.jobIds" defaultMessage="Job IDs (comma-sep)" />
+                  </label>
+                  <Input
+                    value={jobIds}
+                    onChange={(e) => setJobIds(e.target.value)}
+                    placeholder={intl.formatMessage({ id: "launch.config.jobIdsPlaceholder", defaultMessage: "4393940374, 3969556398" })}
+                  />
                 </div>
               )}
 
               {skill === "profile-optimizer" && (
-                <p className="text-xs text-muted-foreground">No parameters required — audits your LinkedIn profile.</p>
+                <p className="text-xs text-muted-foreground">
+                  <FormattedMessage
+                    id="launch.config.profileOptimizerHint"
+                    defaultMessage="No parameters required — audits your LinkedIn profile."
+                  />
+                </p>
               )}
 
               {skill === "experience-bank" && (
-                <p className="text-xs text-muted-foreground">No parameters required — interviews you interactively about achievements.</p>
+                <p className="text-xs text-muted-foreground">
+                  <FormattedMessage
+                    id="launch.config.experienceBankHint"
+                    defaultMessage="No parameters required — interviews you interactively about achievements."
+                  />
+                </p>
               )}
             </div>
 
             {/* Additional context textarea */}
             <div className="space-y-1.5 pt-2">
               <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                <span>Additional context</span>
+                <span>
+                  <FormattedMessage id="launch.config.extraContext" defaultMessage="Additional context" />
+                </span>
                 <span className="font-normal text-muted-foreground lowercase text-[0.7rem] flex items-center gap-2">
-                  {extra.length} chars
+                  <FormattedMessage
+                    id="launch.config.chars"
+                    defaultMessage="{count} chars"
+                    values={{ count: extra.length }}
+                  />
                   {extra.trim() && (
                     <button type="button" onClick={() => setExtra("")} className="text-primary hover:underline">
-                      clear
+                      <FormattedMessage id="common.clear" defaultMessage="clear" />
                     </button>
                   )}
                 </span>
@@ -251,7 +304,10 @@ export function LaunchSection() {
               <Textarea
                 value={extra}
                 onChange={(e) => setExtra(e.target.value)}
-                placeholder="e.g. focus on remote roles, skip crypto; or paste a job description here…"
+                placeholder={intl.formatMessage({
+                  id: "launch.config.extraPlaceholder",
+                  defaultMessage: "e.g. focus on remote roles, skip crypto; or paste a job description here…",
+                })}
                 rows={3}
               />
             </div>
@@ -260,11 +316,13 @@ export function LaunchSection() {
           <div className="p-4 border-t border-border bg-muted/10">
             {running ? (
               <Button variant="destructive" onClick={handleCancel} className="w-full">
-                <XIcon className="size-4 mr-2" /> Cancel execution
+                <XIcon className="size-4 mr-2" />{" "}
+                <FormattedMessage id="launch.config.cancel" defaultMessage="Cancel execution" />
               </Button>
             ) : (
               <Button onClick={handleLaunch} className="w-full">
-                <PlayIcon className="size-4 mr-2" /> Run Agent
+                <PlayIcon className="size-4 mr-2" />{" "}
+                <FormattedMessage id="launch.config.runAgent" defaultMessage="Run Agent" />
               </Button>
             )}
           </div>
@@ -274,11 +332,14 @@ export function LaunchSection() {
         <div className="lg:col-span-7 flex flex-col rounded-xl border border-border bg-[#090a0b] text-neutral-200 overflow-hidden shadow-xs">
           <div className="px-5 py-3 border-b border-border/40 bg-neutral-900/60 flex items-center justify-between">
             <h2 className="text-xs font-mono text-neutral-400 flex items-center gap-2">
-              <TerminalWindowIcon className="size-4" /> agent_output.log
+              <TerminalWindowIcon className="size-4" />{" "}
+              <FormattedMessage id="launch.terminal.title" defaultMessage="agent_output.log" />
             </h2>
             {running && (
               <div className="flex items-center gap-2">
-                <span className="text-[0.68rem] font-semibold text-emerald-400 uppercase tracking-wider">Active</span>
+                <span className="text-[0.68rem] font-semibold text-emerald-400 uppercase tracking-wider">
+                  <FormattedMessage id="launch.terminal.active" defaultMessage="Active" />
+                </span>
                 <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
               </div>
             )}
@@ -286,7 +347,12 @@ export function LaunchSection() {
 
           <div className="p-5 flex-1 overflow-y-auto font-mono text-xs leading-relaxed min-h-[340px] space-y-1">
             {log.length === 0 ? (
-              <div className="text-neutral-500 py-4">No run yet. Pick a skill and click Run Agent.</div>
+              <div className="text-neutral-500 py-4">
+                <FormattedMessage
+                  id="launch.terminal.empty"
+                  defaultMessage="No run yet. Pick a skill and click Run Agent."
+                />
+              </div>
             ) : (
               log.map((entry, idx) => {
                 const colorMap = {
@@ -311,3 +377,4 @@ export function LaunchSection() {
     </div>
   );
 }
+

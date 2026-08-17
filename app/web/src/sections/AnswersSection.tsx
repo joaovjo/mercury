@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { PlusIcon, PencilSimpleIcon, LockIcon, ListPlusIcon, CheckIcon, XIcon } from "@phosphor-icons/react";
+import { FormattedMessage, useIntl } from "react-intl";
 import { useResource } from "@/hooks/useResource";
 import { useLiveTable } from "@/hooks/useLiveTable";
 import { api, post } from "@/lib/api";
@@ -18,7 +19,16 @@ import type { ApplicantAnswer } from "@/types";
 
 const CATEGORIES = ["contact", "eligibility", "links", "eeo", "custom"];
 
+const CATEGORY_I18N: Record<string, string> = {
+  contact: "answers.categories.contact",
+  links: "answers.categories.links",
+  eligibility: "answers.categories.eligibility",
+  eeo: "answers.categories.eeo",
+  custom: "answers.categories.custom",
+};
+
 export function AnswersSection() {
+  const intl = useIntl();
   const answers = useResource<ApplicantAnswer[]>(() => api<ApplicantAnswer[]>("answers"), []);
   useLiveTable("applicant_answers", answers.reload);
 
@@ -62,7 +72,7 @@ export function AnswersSection() {
     setAddError("");
     const key = newKey.trim();
     if (!key) {
-      setAddError("Key is required.");
+      setAddError(intl.formatMessage({ id: "answers.keyRequired", defaultMessage: "Key is required." }));
       return;
     }
     try {
@@ -72,7 +82,7 @@ export function AnswersSection() {
       setNewCategory("contact");
       answers.reload();
     } catch (e: unknown) {
-      setAddError(e instanceof Error ? e.message : "Failed to save.");
+      setAddError(e instanceof Error ? e.message : intl.formatMessage({ id: "answers.saveFailed", defaultMessage: "Failed to save." }));
     }
   }
 
@@ -85,9 +95,14 @@ export function AnswersSection() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Answers</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          <FormattedMessage id="answers.title" defaultMessage="Answers" />
+        </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Reusable application answers — portal-filler fills external ATS forms from these. EEO answers are never auto-filled.
+          <FormattedMessage
+            id="answers.subtitle"
+            defaultMessage="Reusable application answers — portal-filler fills external ATS forms from these. EEO answers are never auto-filled."
+          />
         </p>
       </div>
 
@@ -100,32 +115,46 @@ export function AnswersSection() {
           <div className="rounded-xl border border-border bg-card p-5 shadow-xs space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
               <div className="sm:col-span-4 space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Key</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <FormattedMessage id="answers.key" defaultMessage="Key" />
+                </label>
                 <Input
-                  placeholder="e.g. portfolio_url"
+                  placeholder={intl.formatMessage({ id: "answers.keyPlaceholder", defaultMessage: "e.g. portfolio_url" })}
                   value={newKey}
                   onChange={(e) => setNewKey(e.target.value)}
                 />
               </div>
               <div className="sm:col-span-5 space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Value</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <FormattedMessage id="answers.value" defaultMessage="Value" />
+                </label>
                 <Input
-                  placeholder="Value to insert"
+                  placeholder={intl.formatMessage({ id: "answers.valuePlaceholder", defaultMessage: "Value to insert" })}
                   value={newValue}
                   onChange={(e) => setNewValue(e.target.value)}
                 />
               </div>
               <div className="sm:col-span-2 space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Category</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <FormattedMessage id="answers.category" defaultMessage="Category" />
+                </label>
                 <Select value={newCategory} onValueChange={(val) => setNewCategory(val || "contact")}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Category" />
+                    <SelectValue placeholder={intl.formatMessage({ id: "answers.category", defaultMessage: "Category" })} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="contact">Contact</SelectItem>
-                    <SelectItem value="links">Links</SelectItem>
-                    <SelectItem value="eligibility">Eligibility</SelectItem>
-                    <SelectItem value="custom">Custom</SelectItem>
+                    <SelectItem value="contact">
+                      <FormattedMessage id="answers.categories.contact" defaultMessage="Contact" />
+                    </SelectItem>
+                    <SelectItem value="links">
+                      <FormattedMessage id="answers.categories.links" defaultMessage="Links" />
+                    </SelectItem>
+                    <SelectItem value="eligibility">
+                      <FormattedMessage id="answers.categories.eligibility" defaultMessage="Eligibility" />
+                    </SelectItem>
+                    <SelectItem value="custom">
+                      <FormattedMessage id="answers.categories.custom" defaultMessage="Custom" />
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -140,7 +169,10 @@ export function AnswersSection() {
 
           {list.length === 0 ? (
             <div className="rounded-xl border border-border bg-card p-10 text-center text-muted-foreground shadow-xs">
-              No answers yet. Add your contact details, links, and eligibility above.
+              <FormattedMessage
+                id="answers.empty"
+                defaultMessage="No answers yet. Add your contact details, links, and eligibility above."
+              />
             </div>
           ) : (
             <div className="space-y-8">
@@ -148,15 +180,24 @@ export function AnswersSection() {
                 const rows = grouped[cat] ?? [];
                 const isEeo = cat === "eeo";
                 if (!rows.length && cat !== "custom") return null;
+                const catLabel = intl.formatMessage({
+                  id: CATEGORY_I18N[cat] ?? `answers.categories.${cat}`,
+                  defaultMessage: cat,
+                });
 
                 return (
                   <section key={cat} className={isEeo ? "opacity-80" : ""}>
                     <div className="flex items-center gap-3 mb-3">
-                      <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{cat}</h3>
+                      <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{catLabel}</h3>
                       {isEeo && (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-border bg-muted/60 text-[0.65rem] font-semibold text-muted-foreground">
                           <LockIcon className="size-3" />
-                          <span>HUMAN-ONLY — NEVER AUTO-FILLED</span>
+                          <span>
+                            <FormattedMessage
+                              id="answers.eeoWarning"
+                              defaultMessage="HUMAN-ONLY — NEVER AUTO-FILLED"
+                            />
+                          </span>
                         </span>
                       )}
                     </div>
@@ -211,7 +252,7 @@ export function AnswersSection() {
                                       variant="ghost"
                                       size="icon-xs"
                                       onClick={() => cancelEdit(a)}
-                                      title="Cancel"
+                                      title={intl.formatMessage({ id: "common.cancel", defaultMessage: "Cancel" })}
                                     >
                                       <XIcon className="size-3.5" />
                                     </Button>
@@ -219,7 +260,7 @@ export function AnswersSection() {
                                       size="icon-xs"
                                       onClick={() => saveEdit(a)}
                                       disabled={saving[a.key]}
-                                      title="Save"
+                                      title={intl.formatMessage({ id: "common.save", defaultMessage: "Save" })}
                                     >
                                       <CheckIcon className="size-3.5" />
                                     </Button>
@@ -242,7 +283,12 @@ export function AnswersSection() {
                     ) : (
                       <div className="rounded-xl border border-border bg-card p-6 flex flex-col items-center justify-center text-center text-muted-foreground shadow-xs">
                         <ListPlusIcon className="size-6 text-muted-foreground/60 mb-2" />
-                        <p className="text-xs">No custom answers added yet.</p>
+                        <p className="text-xs">
+                          <FormattedMessage
+                            id="answers.emptyCustom"
+                            defaultMessage="No custom answers added yet."
+                          />
+                        </p>
                       </div>
                     )}
                   </section>
@@ -255,3 +301,4 @@ export function AnswersSection() {
     </div>
   );
 }
+

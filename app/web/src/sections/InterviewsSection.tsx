@@ -1,4 +1,5 @@
-import { CalendarIcon, VideoCameraIcon } from "@phosphor-icons/react";
+import { VideoCameraIcon } from "@phosphor-icons/react";
+import { FormattedMessage, useIntl } from "react-intl";
 import { useResource } from "@/hooks/useResource";
 import { useLiveTable } from "@/hooks/useLiveTable";
 import { api } from "@/lib/api";
@@ -15,6 +16,7 @@ function daysUntil(d?: string): number | null {
 }
 
 export function InterviewsSection() {
+  const intl = useIntl();
   const interviews = useResource<Interview[]>(() => api<Interview[]>("interviews"), []);
   useLiveTable("interviews", interviews.reload);
 
@@ -23,16 +25,31 @@ export function InterviewsSection() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Interviews</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          <FormattedMessage id="interviews.title" defaultMessage="Interviews" />
+        </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          {interviews.status === "ready" ? `${list.length} scheduled` : "—"}
+          {interviews.status === "ready" ? (
+            <FormattedMessage
+              id="interviews.subtitle"
+              defaultMessage="{count, plural, one {# scheduled} other {# scheduled}}"
+              values={{ count: list.length }}
+            />
+          ) : (
+            "—"
+          )}
         </p>
       </div>
 
       {interviews.status === "loading" && <LoadingState rows={4} />}
       {interviews.status === "error" && <ErrorState error={interviews.error} onretry={interviews.reload} />}
       {interviews.status === "ready" && list.length === 0 && (
-        <EmptyState message="No interviews scheduled yet." />
+        <EmptyState
+          message={intl.formatMessage({
+            id: "interviews.empty",
+            defaultMessage: "No interviews scheduled yet.",
+          })}
+        />
       )}
 
       {interviews.status === "ready" && list.length > 0 && (
@@ -50,14 +67,23 @@ export function InterviewsSection() {
                     <span>{iv.company}</span>
                   </div>
                   <div className="text-lg font-bold tracking-tight text-foreground mt-3">
-                    {iv.scheduled_at ? new Date(iv.scheduled_at).toLocaleString() : "TBD"}
+                    {iv.scheduled_at
+                      ? intl.formatDate(new Date(iv.scheduled_at), {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })
+                      : intl.formatMessage({ id: "interviews.tbd", defaultMessage: "TBD" })}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {iv.stage ? `${iv.stage} · ` : ""}
                     <span className="capitalize">{iv.status}</span>
                     {d != null && d >= 0 && (
                       <div className="text-amber-500 font-semibold mt-1">
-                        in {d} {d === 1 ? "day" : "days"}
+                        <FormattedMessage
+                          id="interviews.daysUntil"
+                          defaultMessage="in {days, plural, one {# day} other {# days}}"
+                          values={{ days: d }}
+                        />
                       </div>
                     )}
                   </div>
@@ -76,3 +102,4 @@ export function InterviewsSection() {
     </div>
   );
 }
+

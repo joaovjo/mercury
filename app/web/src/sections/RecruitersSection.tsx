@@ -7,6 +7,7 @@ import {
   CheckCircleIcon,
   WarningCircleIcon,
 } from "@phosphor-icons/react";
+import { FormattedMessage, useIntl } from "react-intl";
 import { useResource } from "@/hooks/useResource";
 import { useLiveTable } from "@/hooks/useLiveTable";
 import { api, post } from "@/lib/api";
@@ -24,6 +25,14 @@ const COLS: Array<Recruiter["status"]> = [
   "closed",
 ];
 
+const STATUS_I18N: Record<Recruiter["status"], string> = {
+  pending: "recruiters.status.pending",
+  accepted: "recruiters.status.accepted",
+  replied: "recruiters.status.replied",
+  interviewing: "recruiters.status.interviewing",
+  closed: "recruiters.status.closed",
+};
+
 const ACCENT: Record<Recruiter["status"], string> = {
   pending: "border-l-muted-foreground/40",
   accepted: "border-l-emerald-500",
@@ -33,6 +42,7 @@ const ACCENT: Record<Recruiter["status"], string> = {
 };
 
 export function RecruitersSection() {
+  const intl = useIntl();
   const recruiters = useResource<Recruiter[]>(() => api<Recruiter[]>("recruiters"), []);
   useLiveTable("recruiters", recruiters.reload);
 
@@ -51,17 +61,41 @@ export function RecruitersSection() {
       const n = r.changes?.length ?? 0;
       let text =
         n === 0
-          ? `No new acceptances (scanned ${r.scanned} pending across ${r.companiesQueried}).`
-          : `${n} newly accepted: ${r.changes.map((c) => c.name).join(", ")}`;
+          ? intl.formatMessage(
+              {
+                id: "recruiters.sync.noNew",
+                defaultMessage: "No new acceptances (scanned {scanned} pending across {companies}).",
+              },
+              { scanned: r.scanned, companies: r.companiesQueried }
+            )
+          : intl.formatMessage(
+              {
+                id: "recruiters.sync.newlyAccepted",
+                defaultMessage: "{count} newly accepted: {names}",
+              },
+              { count: n, names: r.changes.map((c) => c.name).join(", ") }
+            );
       if (r.skipped?.length) {
-        text += ` · skipped: ${r.skipped.join(", ")}`;
+        text += ` · ${intl.formatMessage(
+          {
+            id: "recruiters.sync.skipped",
+            defaultMessage: "skipped: {names}",
+          },
+          { names: r.skipped.join(", ") }
+        )}`;
       }
       setSyncMsg({ ok: true, text });
       due.reload();
     } catch (e: unknown) {
       setSyncMsg({
         ok: false,
-        text: e instanceof Error ? e.message : "Sync failed (is LinkedIn reachable?)",
+        text:
+          e instanceof Error
+            ? e.message
+            : intl.formatMessage({
+                id: "recruiters.sync.failed",
+                defaultMessage: "Sync failed (is LinkedIn reachable?)",
+              }),
       });
     } finally {
       setSyncing(false);
@@ -80,9 +114,19 @@ export function RecruitersSection() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Recruiters</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            <FormattedMessage id="recruiters.title" defaultMessage="Recruiters" />
+          </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            {recruiters.status === "ready" ? `${list.length} contacts` : "—"} across your outreach pipeline
+            {recruiters.status === "ready" ? (
+              <FormattedMessage
+                id="recruiters.subtitle"
+                defaultMessage="{count, plural, one {# contact} other {# contacts}} across your outreach pipeline"
+                values={{ count: list.length }}
+              />
+            ) : (
+              "—"
+            )}
           </p>
         </div>
         <Button
@@ -93,7 +137,9 @@ export function RecruitersSection() {
           className="shrink-0"
         >
           <ArrowsClockwiseIcon className={`size-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
-          {syncing ? "Syncing…" : "Sync now"}
+          {syncing
+            ? intl.formatMessage({ id: "recruiters.syncing", defaultMessage: "Syncing…" })
+            : intl.formatMessage({ id: "recruiters.sync", defaultMessage: "Sync now" })}
         </Button>
       </div>
 
@@ -118,7 +164,9 @@ export function RecruitersSection() {
         <div className="rounded-xl border border-border bg-card p-4 shadow-xs space-y-3">
           <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             <ClockIcon className="size-4 text-amber-500" />
-            <span>Due follow-ups</span>
+            <span>
+              <FormattedMessage id="recruiters.dueFollowUps" defaultMessage="Due follow-ups" />
+            </span>
           </div>
           <div className="divide-y divide-border/60">
             {dueList.map((d, i) => (
@@ -153,7 +201,10 @@ export function RecruitersSection() {
         <ErrorState error={recruiters.error} onretry={recruiters.reload} />
       )}
       {recruiters.status === "ready" && list.length === 0 && (
-        <EmptyState message="No recruiters yet." skill="recruiter-outreach" />
+        <EmptyState
+          message={intl.formatMessage({ id: "recruiters.empty", defaultMessage: "No recruiters yet." })}
+          skill="recruiter-outreach"
+        />
       )}
 
       {recruiters.status === "ready" && list.length > 0 && (
@@ -161,6 +212,10 @@ export function RecruitersSection() {
           {COLS.map((col) => {
             const count = byStatus[col]?.length ?? 0;
             const isInterviewing = col === "interviewing";
+            const colLabel = intl.formatMessage({
+              id: STATUS_I18N[col] ?? `recruiters.status.${col}`,
+              defaultMessage: col,
+            });
             return (
               <div
                 key={col}
@@ -173,7 +228,7 @@ export function RecruitersSection() {
                 <div className="flex items-center justify-between mb-3 px-1">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                     {isInterviewing && <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />}
-                    <span>{col}</span>
+                    <span>{colLabel}</span>
                   </h4>
                   <span className="text-[0.7rem] font-semibold bg-muted px-2 py-0.5 rounded-full text-muted-foreground border border-border">
                     {count}
@@ -235,3 +290,4 @@ export function RecruitersSection() {
     </div>
   );
 }
+

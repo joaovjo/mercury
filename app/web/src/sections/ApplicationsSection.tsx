@@ -4,8 +4,8 @@ import {
   PlusIcon,
   CaretLeftIcon,
   CaretRightIcon,
-  ArrowSquareOutIcon,
 } from "@phosphor-icons/react";
+import { FormattedMessage, useIntl } from "react-intl";
 import { useResource } from "@/hooks/useResource";
 import { useLiveTable } from "@/hooks/useLiveTable";
 import { api } from "@/lib/api";
@@ -38,6 +38,7 @@ function statusBadge(status: string) {
 }
 
 export function ApplicationsSection() {
+  const intl = useIntl();
   const apps = useResource<Application[]>(() => api<Application[]>("applications"), []);
   useLiveTable("applications", apps.reload);
 
@@ -46,14 +47,21 @@ export function ApplicationsSection() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Applications</h1>
-        <p className="text-muted-foreground text-sm mt-1">Tailored resumes &amp; cover letters</p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          <FormattedMessage id="applications.title" defaultMessage="Applications" />
+        </h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          <FormattedMessage id="applications.subtitle" defaultMessage="Tailored resumes & cover letters" />
+        </p>
       </div>
 
       {apps.status === "loading" && <LoadingState rows={5} />}
       {apps.status === "error" && <ErrorState error={apps.error} onretry={apps.reload} />}
       {apps.status === "ready" && list.length === 0 && (
-        <EmptyState message="No applications yet." skill="resume-tailor" />
+        <EmptyState
+          message={intl.formatMessage({ id: "applications.empty", defaultMessage: "No applications yet." })}
+          skill="resume-tailor"
+        />
       )}
 
       {apps.status === "ready" && list.length > 0 && (
@@ -61,14 +69,22 @@ export function ApplicationsSection() {
           {/* Toolbar */}
           <div className="flex items-center justify-between pb-2 border-b border-border text-xs text-muted-foreground font-medium">
             <div className="flex items-center gap-2">
-              <span>{list.length} Applications</span>
+              <span>
+                <FormattedMessage
+                  id="applications.count"
+                  defaultMessage="{count, plural, one {# Application} other {# Applications}}"
+                  values={{ count: list.length }}
+                />
+              </span>
               <span className="opacity-40">•</span>
               <button className="hover:text-foreground transition-colors flex items-center gap-1 opacity-70" disabled>
-                Filter <FunnelIcon className="size-3.5" />
+                <FormattedMessage id="applications.filter" defaultMessage="Filter" />{" "}
+                <FunnelIcon className="size-3.5" />
               </button>
             </div>
             <Button size="xs" disabled className="text-xs">
-              <PlusIcon className="size-3 mr-1" /> New Application
+              <PlusIcon className="size-3 mr-1" />{" "}
+              <FormattedMessage id="applications.newApplication" defaultMessage="New Application" />
             </Button>
           </div>
 
@@ -78,12 +94,24 @@ export function ApplicationsSection() {
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-border bg-muted/40 uppercase tracking-wider text-muted-foreground font-semibold">
-                    <th className="py-3 px-4 w-[28%]">Role / Target</th>
-                    <th className="py-3 px-4">Company</th>
-                    <th className="py-3 px-4">Portal</th>
-                    <th className="py-3 px-4">Score</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4 text-right">Files</th>
+                    <th className="py-3 px-4 w-[28%]">
+                      <FormattedMessage id="applications.table.role" defaultMessage="Role / Target" />
+                    </th>
+                    <th className="py-3 px-4">
+                      <FormattedMessage id="applications.table.company" defaultMessage="Company" />
+                    </th>
+                    <th className="py-3 px-4">
+                      <FormattedMessage id="applications.table.portal" defaultMessage="Portal" />
+                    </th>
+                    <th className="py-3 px-4">
+                      <FormattedMessage id="applications.table.score" defaultMessage="Score" />
+                    </th>
+                    <th className="py-3 px-4">
+                      <FormattedMessage id="applications.table.status" defaultMessage="Status" />
+                    </th>
+                    <th className="py-3 px-4 text-right">
+                      <FormattedMessage id="applications.table.files" defaultMessage="Files" />
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60">
@@ -108,9 +136,13 @@ export function ApplicationsSection() {
                           {!a.job_id && (
                             <span
                               className="text-[0.65rem] text-muted-foreground flex items-center gap-0.5 bg-muted px-1.5 py-0.5 rounded border border-border shrink-0"
-                              title="Not linked to a scouted job"
+                              title={intl.formatMessage({
+                                id: "applications.unlinkedTitle",
+                                defaultMessage: "Not linked to a scouted job",
+                              })}
                             >
-                              <LinkIcon className="size-2.5" /> unlinked
+                              <LinkIcon className="size-2.5" />{" "}
+                              <FormattedMessage id="applications.unlinked" defaultMessage="unlinked" />
                             </span>
                           )}
                         </div>
@@ -145,17 +177,17 @@ export function ApplicationsSection() {
                         <div className="flex items-center justify-end gap-1 flex-wrap">
                           {a.resume_path && (
                             <span className="px-1.5 py-0.5 rounded bg-muted border border-border text-[0.65rem] text-muted-foreground">
-                              resume
+                              <FormattedMessage id="applications.file.resume" defaultMessage="resume" />
                             </span>
                           )}
                           {a.cover_letter_path && (
                             <span className="px-1.5 py-0.5 rounded bg-muted border border-border text-[0.65rem] text-muted-foreground">
-                              cover
+                              <FormattedMessage id="applications.file.cover" defaultMessage="cover" />
                             </span>
                           )}
                           {a.report_path && (
                             <span className="px-1.5 py-0.5 rounded bg-muted border border-border text-[0.65rem] text-muted-foreground">
-                              report
+                              <FormattedMessage id="applications.file.report" defaultMessage="report" />
                             </span>
                           )}
                         </div>
@@ -168,7 +200,13 @@ export function ApplicationsSection() {
 
             {/* Pager footer */}
             <div className="border-t border-border px-4 py-3 flex items-center justify-between text-xs text-muted-foreground">
-              <span>Showing {list.length} of {list.length}</span>
+              <span>
+                <FormattedMessage
+                  id="applications.pager"
+                  defaultMessage="Showing {count} of {total}"
+                  values={{ count: list.length, total: list.length }}
+                />
+              </span>
               <div className="flex items-center gap-1.5">
                 <Button variant="outline" size="icon-xs" disabled>
                   <CaretLeftIcon className="size-3" />
@@ -187,3 +225,4 @@ export function ApplicationsSection() {
     </div>
   );
 }
+

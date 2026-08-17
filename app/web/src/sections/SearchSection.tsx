@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MagnifyingGlassIcon, ArrowSquareOutIcon, ArrowClockwiseIcon } from "@phosphor-icons/react";
+import { FormattedMessage, useIntl } from "react-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,6 +8,7 @@ import { TOKEN } from "@/lib/api";
 import type { SearchResponse } from "@/types";
 
 export function SearchSection() {
+  const intl = useIntl();
   const [mode, setMode] = useState<"jobs" | "people">("jobs");
   const [keywords, setKeywords] = useState("");
   const [location, setLocation] = useState("");
@@ -51,9 +53,11 @@ export function SearchSection() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Search</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          <FormattedMessage id="search.title" defaultMessage="Search" />
+        </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Instant LinkedIn search · deep scout hand-off to the agent
+          <FormattedMessage id="search.subtitle" defaultMessage="Instant LinkedIn search · deep scout hand-off to the agent" />
         </p>
       </div>
 
@@ -64,8 +68,12 @@ export function SearchSection() {
           className="w-fit"
         >
           <TabsList>
-            <TabsTrigger value="jobs">Jobs</TabsTrigger>
-            <TabsTrigger value="people">Recruiters / People</TabsTrigger>
+            <TabsTrigger value="jobs">
+              <FormattedMessage id="search.tabs.jobs" defaultMessage="Jobs" />
+            </TabsTrigger>
+            <TabsTrigger value="people">
+              <FormattedMessage id="search.tabs.people" defaultMessage="Recruiters / People" />
+            </TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -78,47 +86,53 @@ export function SearchSection() {
         >
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Keywords
+              <FormattedMessage id="search.form.keywords" defaultMessage="Keywords" />
             </label>
             <Input
               value={keywords}
               onChange={(e) => setKeywords(e.target.value)}
-              placeholder={mode === "jobs" ? "software engineer" : "recruiter engineer Brazil"}
+              placeholder={
+                mode === "jobs"
+                  ? intl.formatMessage({ id: "search.form.placeholder.jobs", defaultMessage: "software engineer" })
+                  : intl.formatMessage({ id: "search.form.placeholder.people", defaultMessage: "recruiter engineer Brazil" })
+              }
             />
           </div>
 
           {mode === "people" && (
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Company
+                <FormattedMessage id="search.form.company" defaultMessage="Company" />
               </label>
               <Input
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
-                placeholder="Airbnb"
+                placeholder={intl.formatMessage({ id: "search.form.placeholder.company", defaultMessage: "Airbnb" })}
               />
             </div>
           )}
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Location
+              <FormattedMessage id="search.form.location" defaultMessage="Location" />
             </label>
             <Input
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="São Paulo"
+              placeholder={intl.formatMessage({ id: "search.form.placeholder.location", defaultMessage: "São Paulo" })}
             />
           </div>
 
           <Button type="submit" disabled={loading || !keywords.trim()} className="w-full">
             {loading ? (
               <>
-                <ArrowClockwiseIcon className="size-4 mr-2 animate-spin" /> Searching…
+                <ArrowClockwiseIcon className="size-4 mr-2 animate-spin" />{" "}
+                <FormattedMessage id="search.button.searching" defaultMessage="Searching…" />
               </>
             ) : (
               <>
-                <MagnifyingGlassIcon className="size-4 mr-2" /> Search
+                <MagnifyingGlassIcon className="size-4 mr-2" />{" "}
+                <FormattedMessage id="search.button.search" defaultMessage="Search" />
               </>
             )}
           </Button>
@@ -127,17 +141,24 @@ export function SearchSection() {
 
       {error && (
         <div className="rounded-xl border border-destructive/50 bg-destructive/5 p-5 shadow-xs">
-          <strong className="text-destructive font-semibold">Search failed.</strong>
+          <strong className="text-destructive font-semibold">
+            <FormattedMessage id="search.error.title" defaultMessage="Search failed." />
+          </strong>
           <p className="text-muted-foreground text-sm mt-1">{error}</p>
           <p className="text-muted-foreground text-xs mt-2">
-            Make sure the LinkedIn MCP is reachable and you're logged in to LinkedIn in your browser session.
+            <FormattedMessage
+              id="search.error.hint"
+              defaultMessage="Make sure the LinkedIn MCP is reachable and you're logged in to LinkedIn in your browser session."
+            />
           </p>
         </div>
       )}
 
       {raw && (
         <div className="rounded-xl border border-border bg-card p-6 shadow-xs space-y-4">
-          <h3 className="text-base font-semibold text-foreground">Results</h3>
+          <h3 className="text-base font-semibold text-foreground">
+            <FormattedMessage id="search.results.title" defaultMessage="Results" />
+          </h3>
 
           {resultRefs.length > 0 && (
             <div className="flex flex-wrap gap-2">
@@ -166,3 +187,4 @@ export function SearchSection() {
     </div>
   );
 }
+

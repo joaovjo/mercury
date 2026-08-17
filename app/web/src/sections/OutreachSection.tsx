@@ -1,10 +1,10 @@
 import {
-  PaperPlaneTiltIcon,
   ClockIcon,
   ProhibitIcon,
   EnvelopeSimpleIcon,
   ArrowSquareOutIcon,
 } from "@phosphor-icons/react";
+import { FormattedMessage, useIntl } from "react-intl";
 import { useResource } from "@/hooks/useResource";
 import { useLiveTable } from "@/hooks/useLiveTable";
 import { api } from "@/lib/api";
@@ -14,23 +14,24 @@ import { Badge } from "@/components/ui/badge";
 import type { OutreachData } from "@/types";
 
 const FUNNEL = [
-  { key: "queued", label: "Queued", color: "bg-muted-foreground/40", text: "text-muted-foreground" },
-  { key: "invited", label: "Invited", color: "bg-primary", text: "text-primary" },
-  { key: "accepted", label: "Accepted", color: "bg-sky-500", text: "text-sky-500" },
-  { key: "followed_up", label: "Followed up", color: "bg-amber-500", text: "text-amber-500" },
-  { key: "engaged", label: "Engaged", color: "bg-emerald-500", text: "text-emerald-500" },
-  { key: "invite_ignored", label: "Invite ignored", color: "bg-rose-500", text: "text-rose-500" },
-  { key: "unresponsive", label: "Unresponsive", color: "bg-rose-500", text: "text-rose-500" },
-  { key: "do_not_contact", label: "Do not contact", color: "bg-muted-foreground/30", text: "text-muted-foreground" },
+  { key: "queued", labelId: "outreach.funnel.queued", defaultLabel: "Queued", color: "bg-muted-foreground/40", text: "text-muted-foreground" },
+  { key: "invited", labelId: "outreach.funnel.invited", defaultLabel: "Invited", color: "bg-primary", text: "text-primary" },
+  { key: "accepted", labelId: "outreach.funnel.accepted", defaultLabel: "Accepted", color: "bg-sky-500", text: "text-sky-500" },
+  { key: "followed_up", labelId: "outreach.funnel.followed_up", defaultLabel: "Followed up", color: "bg-amber-500", text: "text-amber-500" },
+  { key: "engaged", labelId: "outreach.funnel.engaged", defaultLabel: "Engaged", color: "bg-emerald-500", text: "text-emerald-500" },
+  { key: "invite_ignored", labelId: "outreach.funnel.invite_ignored", defaultLabel: "Invite ignored", color: "bg-rose-500", text: "text-rose-500" },
+  { key: "unresponsive", labelId: "outreach.funnel.unresponsive", defaultLabel: "Unresponsive", color: "bg-rose-500", text: "text-rose-500" },
+  { key: "do_not_contact", labelId: "outreach.funnel.do_not_contact", defaultLabel: "Do not contact", color: "bg-muted-foreground/30", text: "text-muted-foreground" },
 ];
 
 const ACTION_CONFIG = {
-  withdraw: { label: "WITHDRAW", badge: "bg-rose-500/10 text-rose-500 border-rose-500/30" },
-  followup: { label: "FOLLOW UP", badge: "bg-amber-500/10 text-amber-500 border-amber-500/30" },
-  close: { label: "CLOSE", badge: "bg-muted text-muted-foreground border-border" },
+  withdraw: { labelId: "outreach.action.withdraw", defaultLabel: "WITHDRAW", badge: "bg-rose-500/10 text-rose-500 border-rose-500/30" },
+  followup: { labelId: "outreach.action.followup", defaultLabel: "FOLLOW UP", badge: "bg-amber-500/10 text-amber-500 border-amber-500/30" },
+  close: { labelId: "outreach.action.close", defaultLabel: "CLOSE", badge: "bg-muted text-muted-foreground border-border" },
 };
 
 export function OutreachSection() {
+  const intl = useIntl();
   const outreach = useResource<OutreachData | null>(() => api<OutreachData>("outreach"), null);
   useLiveTable("outreach_attempts", outreach.reload);
 
@@ -39,9 +40,14 @@ export function OutreachSection() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Outreach</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          <FormattedMessage id="outreach.title" defaultMessage="Outreach" />
+        </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Relationship memory — who you've contacted, what's due, and your InMail budget
+          <FormattedMessage
+            id="outreach.subtitle"
+            defaultMessage="Relationship memory — who you've contacted, what's due, and your InMail budget"
+          />
         </p>
       </div>
 
@@ -56,7 +62,7 @@ export function OutreachSection() {
               <div key={s.key} className="rounded-xl border border-border bg-card p-4 flex flex-col gap-1.5 shadow-xs">
                 <span className={`flex items-center gap-2 text-xs font-semibold ${s.text}`}>
                   <span className={`size-2 rounded-full ${s.color}`} />
-                  {s.label}
+                  {intl.formatMessage({ id: s.labelId, defaultMessage: s.defaultLabel })}
                 </span>
                 <span className="text-2xl font-bold tracking-tight text-foreground">
                   {d.funnel[s.key] ?? 0}
@@ -71,7 +77,9 @@ export function OutreachSection() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ClockIcon className="size-5 text-amber-500" />
-                  <h3 className="text-base font-semibold text-foreground">Due today</h3>
+                  <h3 className="text-base font-semibold text-foreground">
+                    <FormattedMessage id="outreach.dueToday.title" defaultMessage="Due today" />
+                  </h3>
                 </div>
                 {d.due.length > 0 && (
                   <Badge variant="secondary" className="text-xs">
@@ -82,12 +90,19 @@ export function OutreachSection() {
 
               {d.due.length === 0 ? (
                 <div className="text-sm text-muted-foreground py-8 text-center">
-                  Nothing due today — you're all caught up!
+                  <FormattedMessage
+                    id="outreach.dueToday.empty"
+                    defaultMessage="Nothing due today — you're all caught up!"
+                  />
                 </div>
               ) : (
                 <div className="space-y-2.5">
                   {d.due.map((item, idx) => {
                     const action = ACTION_CONFIG[item.actionKind] ?? ACTION_CONFIG.close;
+                    const actionLabel = intl.formatMessage({
+                      id: action.labelId,
+                      defaultMessage: action.defaultLabel,
+                    });
                     return (
                       <div
                         key={item.id ?? idx}
@@ -96,7 +111,7 @@ export function OutreachSection() {
                         <span
                           className={`shrink-0 mt-0.5 px-2 py-0.5 rounded font-bold tracking-wider border ${action.badge}`}
                         >
-                          {action.label}
+                          {actionLabel}
                         </span>
                         <div className="min-w-0 flex-1">
                           <div className="font-medium text-foreground truncate">
@@ -134,7 +149,9 @@ export function OutreachSection() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <EnvelopeSimpleIcon className="size-5 text-primary" />
-                    <h3 className="text-base font-semibold text-foreground">InMail budget</h3>
+                    <h3 className="text-base font-semibold text-foreground">
+                      <FormattedMessage id="outreach.inmail.title" defaultMessage="InMail budget" />
+                    </h3>
                   </div>
                   <span className="text-[0.68rem] uppercase tracking-wider font-semibold text-muted-foreground">
                     {d.budget.plan}
@@ -145,21 +162,29 @@ export function OutreachSection() {
                   <div className="text-3xl font-bold tracking-tight text-foreground">
                     {d.budget.credits_remaining}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">credits remaining</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    <FormattedMessage id="outreach.inmail.creditsRemaining" defaultMessage="credits remaining" />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 text-center pt-2">
                   <div className="rounded-lg border border-border bg-muted/30 p-2.5">
                     <div className="text-sm font-bold text-foreground">{d.budget.reserve_floor}</div>
-                    <div className="text-[0.65rem] text-muted-foreground uppercase tracking-wider mt-0.5">floor</div>
+                    <div className="text-[0.65rem] text-muted-foreground uppercase tracking-wider mt-0.5">
+                      <FormattedMessage id="outreach.inmail.floor" defaultMessage="floor" />
+                    </div>
                   </div>
                   <div className="rounded-lg border border-border bg-muted/30 p-2.5">
                     <div className="text-sm font-bold text-foreground">{d.budget.credits_used_this_cycle}</div>
-                    <div className="text-[0.65rem] text-muted-foreground uppercase tracking-wider mt-0.5">used</div>
+                    <div className="text-[0.65rem] text-muted-foreground uppercase tracking-wider mt-0.5">
+                      <FormattedMessage id="outreach.inmail.used" defaultMessage="used" />
+                    </div>
                   </div>
                   <div className="rounded-lg border border-border bg-muted/30 p-2.5">
                     <div className="text-sm font-bold text-foreground">{d.budget.inmail_monthly_allotment}</div>
-                    <div className="text-[0.65rem] text-muted-foreground uppercase tracking-wider mt-0.5">monthly</div>
+                    <div className="text-[0.65rem] text-muted-foreground uppercase tracking-wider mt-0.5">
+                      <FormattedMessage id="outreach.inmail.monthly" defaultMessage="monthly" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -168,11 +193,15 @@ export function OutreachSection() {
               <div className="rounded-xl border border-border bg-card p-6 shadow-xs space-y-3">
                 <div className="flex items-center gap-2">
                   <ProhibitIcon className="size-5 text-rose-500" />
-                  <h3 className="text-base font-semibold text-foreground">Blocked companies</h3>
+                  <h3 className="text-base font-semibold text-foreground">
+                    <FormattedMessage id="outreach.blocked.title" defaultMessage="Blocked companies" />
+                  </h3>
                 </div>
 
                 {d.blocked.length === 0 ? (
-                  <div className="text-xs text-muted-foreground py-2">No companies blocked.</div>
+                  <div className="text-xs text-muted-foreground py-2">
+                    <FormattedMessage id="outreach.blocked.empty" defaultMessage="No companies blocked." />
+                  </div>
                 ) : (
                   <div className="space-y-2">
                     {d.blocked.map((b, idx) => (
@@ -195,3 +224,4 @@ export function OutreachSection() {
     </div>
   );
 }
+

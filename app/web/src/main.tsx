@@ -5,6 +5,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { ThemeProvider } from "./components/theme-provider";
+import { LocaleProvider } from "./components/locale-provider";
 import { App } from "./App";
 import "./globals.css";
 
@@ -12,7 +13,9 @@ const elem = document.getElementById("root")!;
 const app = (
   <StrictMode>
     <ThemeProvider defaultTheme="system" storageKey="mercury-theme">
-      <App />
+      <LocaleProvider>
+        <App />
+      </LocaleProvider>
     </ThemeProvider>
   </StrictMode>
 );

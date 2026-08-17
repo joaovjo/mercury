@@ -1,3 +1,4 @@
+import { FormattedMessage, useIntl } from "react-intl";
 import { useResource } from "@/hooks/useResource";
 import { useLiveTable } from "@/hooks/useLiveTable";
 import { api } from "@/lib/api";
@@ -8,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import type { ActivityItem } from "@/types";
 
 export function ActivitySection() {
+  const intl = useIntl();
   const activity = useResource<ActivityItem[]>(() => api<ActivityItem[]>("activity"), []);
   useLiveTable("activity_log", activity.reload);
 
@@ -16,14 +18,23 @@ export function ActivitySection() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Activity</h1>
-        <p className="text-muted-foreground text-sm mt-1">Recent skill runs and actions</p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          <FormattedMessage id="activity.title" defaultMessage="Activity" />
+        </h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          <FormattedMessage id="activity.subtitle" defaultMessage="Recent skill runs and actions" />
+        </p>
       </div>
 
       {activity.status === "loading" && <LoadingState rows={5} />}
       {activity.status === "error" && <ErrorState error={activity.error} onretry={activity.reload} />}
       {activity.status === "ready" && list.length === 0 && (
-        <EmptyState message="No activity logged yet." />
+        <EmptyState
+          message={intl.formatMessage({
+            id: "activity.empty",
+            defaultMessage: "No activity logged yet.",
+          })}
+        />
       )}
 
       {activity.status === "ready" && list.length > 0 && (
@@ -34,7 +45,10 @@ export function ActivitySection() {
               className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-4 text-xs hover:bg-muted/20 transition-colors"
             >
               <span className="text-muted-foreground font-mono shrink-0 min-w-[150px]">
-                {new Date(a.ts).toLocaleString()}
+                {intl.formatDate(new Date(a.ts), {
+                  dateStyle: "short",
+                  timeStyle: "medium",
+                })}
               </span>
               {a.skill && (
                 <Badge variant="secondary" className="w-fit text-[0.68rem] px-2 py-0.5 font-mono">
@@ -51,3 +65,4 @@ export function ActivitySection() {
     </div>
   );
 }
+
