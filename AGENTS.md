@@ -13,7 +13,7 @@ A job-search companion split into two halves:
    LinkedIn MCP + Chrome MCP and persist results through the `mercury` CLI.
 2. **App** (`app/`) — a Bun + TypeScript CLI that is BOTH the dashboard launcher
    AND the write API the skills call. Ships as a single compiled binary with the
-   Svelte UI embedded.
+   React UI embedded.
 
 ## Architecture
 
@@ -43,13 +43,18 @@ app/
 │   ├── cli/        # command entry + write subcommands + setup
 │   ├── db/         # schema, connection (bun:sqlite, WAL), change notify
 │   ├── server/     # Bun.serve dashboard, REST/WS, queries, embedded assets
-│   ├── mcp/        # LinkedIn MCP client + hybrid search
+│   ├── mcp/        # LinkedIn MCP client + hybrid search + invite withdrawal
 │   ├── acp/        # ACP client, provider registry, session manager
+│   ├── outreach/   # outreach relationship-memory engine (state machine, store, budget)
+│   ├── recruiter/  # recruiter sync (accepted-invite detection via 1st-degree search)
+│   ├── match/      # ATS form-label → stored-answer matcher (exact/synonym/fuzzy)
+│   ├── adapters/   # per-ATS field registries (Greenhouse, Lever, Ashby, generic)
 │   └── paths.ts    # ~/.mercury path resolution + config
 ├── scripts/
 │   ├── bootstrap.ts  # curl|bun installer/updater (prebuilt binary + source fallback)
 │   └── install.ts    # local dev installer (bun run install:ts)
-└── web/            # Svelte 5 dashboard (Vite build → embedded into the binary)
+└── web/            # React 19 dashboard (Bun build → embedded into the binary)
+                    #   Tailwind v4, shadcn, Phosphor Icons, Recharts, react-intl (en-US + pt-BR)
 skills/             # the agent skills (copied into agent dirs by `mercury setup`)
 ```
 
@@ -80,7 +85,7 @@ bun run build               # build:web → embed assets → compile single bina
 ```
 
 `bun run build` chains:
-1. `build:web` — Vite builds the Svelte app to `app/web/dist`
+1. `build:web` — Bun builds the React app to `app/web/dist`
 2. `embed` — `scripts/embed-assets.ts` inlines `web/dist` as base64 into
    `src/server/assets.gen.ts` (so the binary is self-contained)
 3. `build:bin` — `bun build --compile` → `app/dist/mercury`
@@ -106,8 +111,11 @@ mercury setup --all           # copy skills into every detected agent
 - **bun:sqlite named params** can't use a `$status` JS shorthand key — that's not
   a valid identifier. Type binding objects as `Record<string,string|number|null>`.
 - **`Bun.serve<WSData>`** takes a single generic in this Bun version (not two).
-- **Svelte 5 runes**: `bind:this` targets must be declared with `$state()` or
-  the effect that uses them won't re-run.
+- **React 19 + react-intl**: all user-facing strings go through `<FormattedMessage>`
+  or `intl.formatMessage()`. Add new keys to both `web/src/locales/en-US.json` and
+  `web/src/locales/pt-BR.json`. Never hardcode visible text in components.
+- **shadcn components** live in `web/src/components/ui/`; common patterns (loading,
+  error states) are in `web/src/components/common/`.
 - **ACP**: providers live in `src/acp/providers.ts`. Each returns `{cmd, env?}`.
   Model selection is threaded as an optional `model` → `OPENCODE_CONFIG_CONTENT`
   (opencode) or `ANTHROPIC_MODEL` (Claude Code). Model lists come from

@@ -65,6 +65,7 @@ profile-optimizer → job-scout → resume-tailor → recruiter-outreach
 | **experience-bank** | "Grill me" — periodically interviews you about new achievements and stores them as a tagged, reusable pool in `.mercury/experience/` that resume-tailor draws from. Run occasionally, not per application |
 | **resume-tailor** | Takes your base resume + experience bank + scouted roles and produces role-tailored versions with gap analysis, ATS keyword alignment, and cover letters |
 | **recruiter-outreach** | Finds technical recruiters at target companies, prioritizes by proximity/mutuals, and sends tailored connection requests |
+| **outreach-tracker** | Runs the daily due-action queue (withdraw stale invites, draft follow-ups, detect replies via LinkedIn inbox, close unresponsive contacts) — all behind explicit user consent (never auto-sends) |
 | **portal-filler** | Autofills an external ATS application form (Greenhouse / Lever / Ashby + generic) from your stored answers and tailored resume, then **pauses for you to review and submit** — it never submits for you |
 
 See [`.github/assets/diagram.html`](.github/assets/diagram.html) for a visual of how the skills work together.
@@ -86,8 +87,9 @@ What it gives you:
 - **Profile** — recruiter-search metrics charted over time (views, search appearances, connections)
 - **Search** — instant LinkedIn job/people search (hybrid: raw results via the LinkedIn MCP)
 - **Launch** — run any Mercury skill through your agent (**opencode** or **Claude Code**) over [ACP](https://agentclientprotocol.com), with a live agent activity stream
-- **Recruiters** — kanban pipeline (pending → accepted → replied → interviewing → closed)
-- **Jobs / Applications / Interviews / Activity** — everything tracked
+- **Recruiters** — kanban pipeline (pending → accepted → replied → interviewing → closed), with one-click **Sync** to detect accepted invites
+- **Outreach** — lifecycle funnel (queued → invited → accepted → engaged), due-action queue (withdraw / follow-up / close), per-company blocked counts, and InMail credit budget
+- **Jobs / Applications / Interviews / Answers / Activity** — everything tracked
 
 |  |  |
 |:---:|:---:|
@@ -98,19 +100,24 @@ What it gives you:
 
 > Screenshots use synthetic demo data.
 
-The dashboard is a single Bun-compiled binary with the UI embedded. It binds to
-`127.0.0.1` on a random port with a URL token, and stores everything in a local
-SQLite database at `~/.mercury/mercury.db`.
+The dashboard is a single Bun-compiled binary with the UI embedded (React 19 +
+Tailwind v4 + shadcn). It binds to `127.0.0.1` on a random port with a URL token,
+stores everything in a local SQLite database at `~/.mercury/mercury.db`, and
+supports English and Brazilian Portuguese (selectable in the UI).
 
 The `mercury` CLI is both the dashboard launcher **and** the write API the skills
 call (`mercury recruiter add`, `mercury job save`, …) — one schema, one source of truth.
 
 ## The `.mercury/` Directory
 
-Mercury stores all job search artifacts in a `.mercury/` folder in your workspace:
+Mercury stores all job search state in `~/.mercury/` (override with `MERCURY_HOME`):
 
 ```
-.mercury/
+~/.mercury/
+├── mercury.db                  # SQLite (WAL): recruiters, jobs, metrics, outreach, …
+├── config.json                 # Provider + preferences (outreach thresholds, InMail budget, …)
+├── dashboard.lock              # {port, token, pid} of a running dashboard
+├── update-check.json           # Cached release-check result
 ├── base/
 │   └── resume.typ              # Your canonical base resume
 ├── experience/
@@ -126,10 +133,9 @@ Mercury stores all job search artifacts in a `.mercury/` folder in your workspac
 ├── reports/
 │   ├── airbnb-4393940374.md    # Gap/match analysis per role
 │   └── ...
-├── logs/
-│   ├── 2026-06-26T14:30:00.md  # Run history, diffs, keyword scores
-│   └── ...
-└── config.toml                 # Preferences (base resume path, format, targets)
+└── logs/
+    ├── 2026-06-26T14:30:00.md  # Run history, diffs, keyword scores
+    └── ...
 ```
 
 Everything is tracked — you get full traceability of every tailoring run, outreach wave, and profile change.
@@ -288,11 +294,13 @@ mercury application update --id 1 --status filled --portal greenhouse --unfilled
 ## Known Quirks & Limitations
 
 - **Auto-apply is fill-then-pause, not fully autonomous** — `portal-filler` fills external ATS forms (Greenhouse/Lever/Ashby) but stops before Submit so you review and send. Workday, Taleo, and iCIMS (multi-step, iframe-heavy, account-gated) and opt-in auto-submit are not yet supported; CAPTCHA/SSO are left to the human.
+- **LinkedIn MCP stale browsers (Windows)** — the LinkedIn MCP can leave orphaned headless Chromium processes that lock the profile directory. Run `mercury linkedin reset` to sweep them (skills do this automatically as a preflight). See the [Windows gotcha](#mcp-servers) above for ACL fixes.
 - **LinkedIn rate limits** — don't send >10-15 connection requests per session
 - **Top Skills** are managed inside the About editor (`/add-edit/SUMMARY/`), not the Skills detail page
 - **Company URN IDs** are required for people search filters — plain names are silently ignored
 - **Typeahead fields** (language, skills) require ArrowDown + Enter after typing
 - **"Notify network" toggle** — always verify it's OFF before saving experience edits
+- **Self-update** — run `mercury update` (or re-run the bootstrap one-liner) to update to the latest release in-place
 
 ## Keywords
 
