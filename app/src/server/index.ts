@@ -76,6 +76,7 @@ export async function dashboardCmd(flags: Flags): Promise<void> {
   const server = Bun.serve<WSData>({
     port,
     hostname: "127.0.0.1",
+    idleTimeout: 60,
     async fetch(req, srv) {
       const url = new URL(req.url);
       const path = url.pathname;
