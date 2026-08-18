@@ -56,7 +56,7 @@ export const PROVIDERS: Record<string, AcpProvider> = {
       // escape hatch ("unset the CLAUDECODE environment variable").
       const env: Record<string, string> = { CLAUDECODE: "" };
       if (model) env.ANTHROPIC_MODEL = model;
-      return { cmd: ["npx", "-y", "@zed-industries/claude-code-acp"], env };
+      return { cmd: ["bunx", "--bun", "@zed-industries/claude-code-acp"], env };
     },
   },
 };
