@@ -26,7 +26,7 @@
 
 ---
 
-Mercury is a collection of **AI agent skills** that automate your LinkedIn job search end-to-end, plus a local dashboard to run and track it all. It works with any AI coding assistant that supports skill files (opencode, Cursor, Claude Code, Cline, …) paired with a [LinkedIn MCP Server](https://github.com/stickerdaniel/linkedin-mcp-server) and Chrome MCP.
+Mercury is a collection of **AI agent skills** that automate your LinkedIn job search end-to-end, plus a local dashboard to run and track it all. It works with any AI coding assistant that supports skill files (opencode, Cursor, Claude Code, Cline, …) paired with a [LinkedIn MCP Server](https://github.com/joaovjo/linkedin-mcp-server-ts) and Chrome MCP.
 
 ## Quick Start
 
@@ -138,11 +138,11 @@ Everything is tracked — you get full traceability of every tailoring run, outr
 
 ### MCP Servers
 
-1. **[LinkedIn MCP Server](https://github.com/stickerdaniel/linkedin-mcp-server)** — Profile reading, job search, people search, connection requests
+1. **[LinkedIn MCP Server](https://github.com/joaovjo/linkedin-mcp-server-ts)** — Profile reading, job search, people search, connection requests
 2. **Chrome MCP** — For profile edits that LinkedIn doesn't expose via API (browser automation)
 
 > **Windows gotcha (LinkedIn MCP login):** don't run the LinkedIn MCP login/setup
-> (`uvx mcp-server-linkedin@latest --login`) from an **Administrator/elevated**
+> (`bunx linkedin-mcp-server-ts@latest --login`) from an **Administrator/elevated**
 > terminal. It creates `%USERPROFILE%\.linkedin-mcp\{profile,trace-runs}\` with
 > admin-only ACLs; your agent then runs the MCP at normal integrity, can't write
 > `trace-runs\`, and it crashes on startup (`PermissionError: [WinError 5] Access

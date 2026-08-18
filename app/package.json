@@ -21,10 +21,10 @@
     "test": "bun run ensure-assets && bun test"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0"
+    "@modelcontextprotocol/client": "^2.0.0"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "typescript": "^6.0.0"
+    "typescript": "^7.0.2"
   }
 }

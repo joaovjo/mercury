@@ -6,7 +6,7 @@ import type { Flags } from "./flags.ts";
 /**
  * LinkedIn MCP hygiene.
  *
- * The `mcp-server-linkedin` server drives a headless Chromium against a single
+ * The `linkedin-mcp-server-ts` server drives a headless Chromium against a single
  * *persistent* profile (~/.linkedin-mcp/profile). On Windows, when the MCP
  * client (Claude Code, opencode, or our own dashboard) kills the server, the
  * browser children are not reaped — Windows has no POSIX process groups, so the
