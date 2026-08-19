@@ -28,7 +28,15 @@ export const PROVIDERS: Record<string, AcpProvider> = {
     id: "opencode",
     displayName: "opencode",
     bin: "opencode",
-    models: [],
+    models: [
+      "anthropic/claude-3-7-sonnet",
+      "anthropic/claude-3-5-sonnet",
+      "openai/gpt-4o",
+      "openai/o3-mini",
+      "google/gemini-2.0-flash",
+      "google/gemini-2.5-pro",
+      "openrouter/auto",
+    ],
     defaultModel: undefined,
     command: (cwd, model) => {
       const env = model ? { OPENCODE_CONFIG_CONTENT: JSON.stringify({ model }) } : undefined;
@@ -80,7 +88,9 @@ async function runWithTimeout(cmd: string[], timeoutMs: number): Promise<string 
     })();
     const timeout = new Promise<null>((resolve) =>
       setTimeout(() => {
-        try { proc.kill("SIGKILL"); } catch {}
+        try {
+          proc.kill();
+        } catch {}
         resolve(null);
       }, timeoutMs),
     );
@@ -94,7 +104,7 @@ async function runWithTimeout(cmd: string[], timeoutMs: number): Promise<string 
  *  the Claude Code ACP adapter for a session probe), so cache the result per
  *  provider for the lifetime of the dashboard process with a short TTL. */
 const MODELS_TTL_MS = 5 * 60 * 1000;
-const MODELS_SPAWN_TIMEOUT_MS = 4000;
+const MODELS_SPAWN_TIMEOUT_MS = 20000;
 // The Claude probe spawns the ACP adapter and runs initialize + session/new,
 // which is heavier than a plain CLI call (npx resolve + adapter boot + session
 // create). Result is cached and warmed on boot, so a generous bound is fine.
@@ -132,11 +142,12 @@ export async function listProviderModels(providerId: string): Promise<string[]> 
 
 async function listOpenCodeModels(): Promise<string[]> {
   const out = (await runWithTimeout(["opencode", "models"], MODELS_SPAWN_TIMEOUT_MS))?.trim();
-  if (!out) return [];
-  return out
+  if (!out) return PROVIDERS.opencode?.models ?? [];
+  const parsed = out
     .split("\n")
-    .map((l) => l.trim())
+    .map((l) => l.trim().replace(/\r$/, ""))
     .filter((l) => l.length > 0 && !l.startsWith("#") && !l.startsWith("//"));
+  return parsed.length > 0 ? parsed : PROVIDERS.opencode?.models ?? [];
 }
 
 async function listClaudeCodeModels(): Promise<string[]> {
