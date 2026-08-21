@@ -1,4 +1,7 @@
 #!/usr/bin/env bun
+import { chmodSync } from "node:fs";
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
 /**
  * Mercury local dev installer — builds the single binary and links it onto your PATH.
  *
@@ -8,9 +11,6 @@
  *   MERCURY_BIN_DIR  where the binary is linked (default: ~/.local/bin)
  */
 import { $ } from "bun";
-import { join } from "node:path";
-import { mkdir } from "node:fs/promises";
-import { chmodSync } from "node:fs";
 
 const appDir = join(import.meta.dir, "..");
 const HOME = process.env.HOME ?? process.env.USERPROFILE ?? "~";
@@ -27,17 +27,17 @@ const src = join(appDir, "dist", `mercury${EXE}`);
 const dst = join(binDir, `mercury${EXE}`);
 await Bun.write(dst, Bun.file(src));
 if (!IS_WINDOWS) {
-  chmodSync(dst, 0o755);
+	chmodSync(dst, 0o755);
 }
 
 console.log(`\n✓ Installed mercury -> ${dst}`);
 const onPath = Bun.which("mercury");
 if (!onPath) {
-  console.log(`  Note: add ${binDir} to your PATH:`);
-  if (IS_WINDOWS) {
-    console.log(`    $env:Path = "${binDir};$env:Path"`);
-  } else {
-    console.log(`    export PATH="${binDir}:$PATH"`);
-  }
+	console.log(`  Note: add ${binDir} to your PATH:`);
+	if (IS_WINDOWS) {
+		console.log(`    $env:Path = "${binDir};$env:Path"`);
+	} else {
+		console.log(`    export PATH="${binDir}:$PATH"`);
+	}
 }
 console.log("Run: mercury init && mercury dashboard");

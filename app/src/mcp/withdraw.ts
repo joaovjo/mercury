@@ -27,9 +27,9 @@
  * calls `mercury outreach update --state invite_ignored` directly.
  */
 export async function withdrawInvitation(username: string): Promise<boolean> {
-  // Deterministic CLI has no browser; signal "unconfirmed" so the caller blocks
-  // the attempt but reports the invite may still be pending. The browser-driven
-  // path lives in the outreach-tracker skill (docs/skills/outreach-tracker).
-  void username;
-  return false;
+	// Deterministic CLI has no browser; signal "unconfirmed" so the caller blocks
+	// the attempt but reports the invite may still be pending. The browser-driven
+	// path lives in the outreach-tracker skill (docs/skills/outreach-tracker).
+	void username;
+	return false;
 }

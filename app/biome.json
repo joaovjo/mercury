@@ -6,7 +6,13 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["**", "!!**/dist"]
+		"includes": [
+			"**",
+			"!!**/dist",
+			"!node_modules",
+			"!web",
+			"!skills-lock.json"
+		]
 	},
 	"formatter": {
 		"enabled": true,

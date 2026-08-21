@@ -1,5 +1,5 @@
 import { detectPortal } from "../adapters/registry.ts";
-import { reqStr, type Flags } from "./flags.ts";
+import { type Flags, reqStr } from "./flags.ts";
 
 /**
  * mercury detect-portal --url <application-url>
@@ -15,13 +15,13 @@ import { reqStr, type Flags } from "./flags.ts";
  *     "notes":  ["..."] }
  */
 export async function detectPortalCmd(flags: Flags): Promise<void> {
-  const url = reqStr(flags, "url");
-  const adapter = detectPortal(url);
-  console.log(
-    JSON.stringify(
-      { portal: adapter.portal, fields: adapter.fields, notes: adapter.notes },
-      null,
-      2,
-    ),
-  );
+	const url = reqStr(flags, "url");
+	const adapter = detectPortal(url);
+	console.log(
+		JSON.stringify(
+			{ portal: adapter.portal, fields: adapter.fields, notes: adapter.notes },
+			null,
+			2,
+		),
+	);
 }

@@ -1,10 +1,13 @@
-import { join } from "node:path";
-import { existsSync } from "node:fs";
 import { homedir } from "node:os";
-import { ensureHome, paths } from "../paths.ts";
 import { db } from "../db/index.ts";
+import { ensureHome } from "../paths.ts";
 import { type Flags, str } from "./flags.ts";
-import { ensureSkillsSource, detectAgents, copyDir, type AgentTarget } from "./skills.ts";
+import {
+	type AgentTarget,
+	copyDir,
+	detectAgents,
+	ensureSkillsSource,
+} from "./skills.ts";
 
 /**
  * mercury setup — install the Mercury skills into every detected agent, and
@@ -18,60 +21,72 @@ import { ensureSkillsSource, detectAgents, copyDir, type AgentTarget } from "./s
  *   --skills-src <p> override where to read the skills from
  */
 export async function setupCmd(flags: Flags): Promise<void> {
-  ensureHome();
-  db(); // ensure the home + db exist
+	ensureHome();
+	db(); // ensure the home + db exist
 
-  const src = str(flags, "skills-src") ?? (await ensureSkillsSource());
-  if (!src) {
-    console.error("error: couldn't locate or download the Mercury skills/ directory.");
-    console.error("  Set MERCURY_SKILLS_SRC=/path/to/repo/skills, run from a clone,");
-    console.error("  or check your network (setup fetches the skills tarball for prebuilt installs).");
-    process.exit(1);
-  }
+	const src = str(flags, "skills-src") ?? (await ensureSkillsSource());
+	if (!src) {
+		console.error(
+			"error: couldn't locate or download the Mercury skills/ directory.",
+		);
+		console.error(
+			"  Set MERCURY_SKILLS_SRC=/path/to/repo/skills, run from a clone,",
+		);
+		console.error(
+			"  or check your network (setup fetches the skills tarball for prebuilt installs).",
+		);
+		process.exit(1);
+	}
 
-  const onlyAgent = str(flags, "agent");
-  const explicitDir = str(flags, "skills-dir");
-  const includeAll = flags.all === true;
+	const onlyAgent = str(flags, "agent");
+	const explicitDir = str(flags, "skills-dir");
+	const includeAll = flags.all === true;
 
-  let targets: AgentTarget[] = detectAgents();
-  if (onlyAgent) targets = targets.filter((t) => t.id === onlyAgent);
-  if (!includeAll && !onlyAgent) targets = targets.filter((t) => t.detected);
+	let targets: AgentTarget[] = detectAgents();
+	if (onlyAgent) targets = targets.filter((t) => t.id === onlyAgent);
+	if (!includeAll && !onlyAgent) targets = targets.filter((t) => t.detected);
 
-  const copied: string[] = [];
+	const copied: string[] = [];
 
-  for (const t of targets) {
-    copyDir(src, t.skillsDir);
-    copied.push(`${t.name} → ${tilde(t.skillsDir)}`);
-  }
+	for (const t of targets) {
+		copyDir(src, t.skillsDir);
+		copied.push(`${t.name} → ${tilde(t.skillsDir)}`);
+	}
 
-  if (explicitDir) {
-    copyDir(src, explicitDir);
-    copied.push(`(explicit) → ${tilde(explicitDir)}`);
-  }
+	if (explicitDir) {
+		copyDir(src, explicitDir);
+		copied.push(`(explicit) → ${tilde(explicitDir)}`);
+	}
 
-  console.log(`Mercury setup — skills from ${tilde(src)}\n`);
+	console.log(`Mercury setup — skills from ${tilde(src)}\n`);
 
-  if (copied.length === 0) {
-    console.log("No agents detected. Options:");
-    console.log("  • mercury setup --all                 (set up all known agents)");
-    console.log("  • mercury setup --agent opencode      (a specific agent)");
-    console.log("  • mercury setup --skills-dir <path>   (an explicit directory)");
-  } else {
-    for (const line of copied) console.log(`  ✓ ${line}`);
-  }
+	if (copied.length === 0) {
+		console.log("No agents detected. Options:");
+		console.log(
+			"  • mercury setup --all                 (set up all known agents)",
+		);
+		console.log("  • mercury setup --agent opencode      (a specific agent)");
+		console.log(
+			"  • mercury setup --skills-dir <path>   (an explicit directory)",
+		);
+	} else {
+		for (const line of copied) console.log(`  ✓ ${line}`);
+	}
 
-  // Show which agents were skipped so the user knows what's available.
-  if (!onlyAgent && !includeAll) {
-    const skipped = detectAgents().filter((t) => !t.detected);
-    if (skipped.length) {
-      console.log(`\n  Not detected (use --all or --agent to include): ${skipped.map((s) => s.id).join(", ")}`);
-    }
-  }
+	// Show which agents were skipped so the user knows what's available.
+	if (!onlyAgent && !includeAll) {
+		const skipped = detectAgents().filter((t) => !t.detected);
+		if (skipped.length) {
+			console.log(
+				`\n  Not detected (use --all or --agent to include): ${skipped.map((s) => s.id).join(", ")}`,
+			);
+		}
+	}
 
-  console.log(`\nNext: mercury init && mercury dashboard`);
+	console.log(`\nNext: mercury init && mercury dashboard`);
 }
 
 function tilde(p: string): string {
-  const h = homedir();
-  return p.startsWith(h) ? p.replace(h, "~") : p;
+	const h = homedir();
+	return p.startsWith(h) ? p.replace(h, "~") : p;
 }

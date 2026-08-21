@@ -11,7 +11,7 @@
  *  - Opt out entirely with MERCURY_NO_UPDATE_CHECK=1.
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { paths, ensureHome } from "./paths.ts";
+import { ensureHome, paths } from "./paths.ts";
 import { VERSION } from "./version.gen.ts";
 
 const CHECK_INTERVAL_MS = 10 * 60 * 60 * 1000; // 10 hours
@@ -22,84 +22,84 @@ const FETCH_TIMEOUT_MS = 1500;
  * JSON with a `tag_name` or `version` field works).
  */
 const RELEASES_API =
-  process.env.MERCURY_UPDATE_URL ??
-  "https://api.github.com/repos/joaovjo/mercury/releases/latest";
+	process.env.MERCURY_UPDATE_URL ??
+	"https://api.github.com/repos/joaovjo/mercury/releases/latest";
 const INSTALL_CMD =
-  "curl -fsSL https://raw.githubusercontent.com/joaovjo/mercury/main/app/scripts/bootstrap.ts | bun run -";
+	"curl -fsSL https://raw.githubusercontent.com/joaovjo/mercury/main/app/scripts/bootstrap.ts | bun run -";
 
 interface UpdateCache {
-  /** Last time we hit the network (epoch ms). */
-  checkedAt: number;
-  /** Latest version string we saw on the remote. */
-  latest: string;
+	/** Last time we hit the network (epoch ms). */
+	checkedAt: number;
+	/** Latest version string we saw on the remote. */
+	latest: string;
 }
 
 function disabled(): boolean {
-  const v = process.env.MERCURY_NO_UPDATE_CHECK;
-  return v === "1" || v === "true";
+	const v = process.env.MERCURY_NO_UPDATE_CHECK;
+	return v === "1" || v === "true";
 }
 
 function readCache(): UpdateCache | null {
-  try {
-    if (!existsSync(paths.updateCache)) return null;
-    return JSON.parse(readFileSync(paths.updateCache, "utf8")) as UpdateCache;
-  } catch {
-    return null;
-  }
+	try {
+		if (!existsSync(paths.updateCache)) return null;
+		return JSON.parse(readFileSync(paths.updateCache, "utf8")) as UpdateCache;
+	} catch {
+		return null;
+	}
 }
 
 function writeCache(c: UpdateCache): void {
-  try {
-    ensureHome();
-    writeFileSync(paths.updateCache, JSON.stringify(c));
-  } catch {
-    /* best-effort */
-  }
+	try {
+		ensureHome();
+		writeFileSync(paths.updateCache, JSON.stringify(c));
+	} catch {
+		/* best-effort */
+	}
 }
 
 /** Parse "1.2.3" (ignoring any pre-release/build suffix) into [1,2,3]. */
 function parseSemver(v: string): [number, number, number] | null {
-  const m = /^\s*v?(\d+)\.(\d+)\.(\d+)/.exec(v);
-  if (!m) return null;
-  return [Number(m[1]), Number(m[2]), Number(m[3])];
+	const m = /^\s*v?(\d+)\.(\d+)\.(\d+)/.exec(v);
+	if (!m) return null;
+	return [Number(m[1]), Number(m[2]), Number(m[3])];
 }
 
 /** True when `latest` is strictly greater than `current`. */
 export function isNewer(latest: string, current: string): boolean {
-  const a = parseSemver(latest);
-  const b = parseSemver(current);
-  if (!a || !b) return false;
-  for (let i = 0; i < 3; i++) {
-    if (a[i] > b[i]) return true;
-    if (a[i] < b[i]) return false;
-  }
-  return false;
+	const a = parseSemver(latest);
+	const b = parseSemver(current);
+	if (!a || !b) return false;
+	for (let i = 0; i < 3; i++) {
+		if (a[i] > b[i]) return true;
+		if (a[i] < b[i]) return false;
+	}
+	return false;
 }
 
 async function fetchLatest(): Promise<string | null> {
-  try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
-    const res = await fetch(RELEASES_API, {
-      signal: ctrl.signal,
-      cache: "no-store",
-      headers: {
-        accept: "application/vnd.github+json",
-        // GitHub requires a UA; identify ourselves politely.
-        "user-agent": `mercury/${VERSION}`,
-      },
-    });
-    clearTimeout(t);
-    if (!res.ok) return null;
-    // GitHub Releases returns `tag_name` (e.g. "v0.2.0"); test fixtures may
-    // return `version`. parseSemver tolerates the leading "v".
-    const body = (await res.json()) as { tag_name?: string; version?: string };
-    const raw = body.tag_name ?? body.version;
-    // Normalize "v0.2.0" -> "0.2.0" so it matches VERSION for display + compare.
-    return typeof raw === "string" ? raw.replace(/^v/i, "") : null;
-  } catch {
-    return null;
-  }
+	try {
+		const ctrl = new AbortController();
+		const t = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+		const res = await fetch(RELEASES_API, {
+			signal: ctrl.signal,
+			cache: "no-store",
+			headers: {
+				accept: "application/vnd.github+json",
+				// GitHub requires a UA; identify ourselves politely.
+				"user-agent": `mercury/${VERSION}`,
+			},
+		});
+		clearTimeout(t);
+		if (!res.ok) return null;
+		// GitHub Releases returns `tag_name` (e.g. "v0.2.0"); test fixtures may
+		// return `version`. parseSemver tolerates the leading "v".
+		const body = (await res.json()) as { tag_name?: string; version?: string };
+		const raw = body.tag_name ?? body.version;
+		// Normalize "v0.2.0" -> "0.2.0" so it matches VERSION for display + compare.
+		return typeof raw === "string" ? raw.replace(/^v/i, "") : null;
+	} catch {
+		return null;
+	}
 }
 
 /**
@@ -109,7 +109,7 @@ async function fetchLatest(): Promise<string | null> {
  * a cache as stale regardless of its timestamp.
  */
 function cacheIsStale(cache: UpdateCache): boolean {
-  return isNewer(VERSION, cache.latest);
+	return isNewer(VERSION, cache.latest);
 }
 
 /**
@@ -121,40 +121,44 @@ function cacheIsStale(cache: UpdateCache): boolean {
  * pin us to a version older than what's actually installed.
  */
 async function resolveLatest(): Promise<string | null> {
-  const cache = readCache();
-  const now = Date.now();
-  if (cache && now - cache.checkedAt < CHECK_INTERVAL_MS && !cacheIsStale(cache)) {
-    return cache.latest;
-  }
-  const latest = await fetchLatest();
-  if (latest) {
-    writeCache({ checkedAt: now, latest });
-    return latest;
-  }
-  // Network failed — fall back to a stale cache value only if it isn't behind
-  // the installed version. Refresh the timestamp lightly so we don't hammer on
-  // every invocation.
-  if (cache && !cacheIsStale(cache)) {
-    writeCache({ checkedAt: now, latest: cache.latest });
-    return cache.latest;
-  }
-  return null;
+	const cache = readCache();
+	const now = Date.now();
+	if (
+		cache &&
+		now - cache.checkedAt < CHECK_INTERVAL_MS &&
+		!cacheIsStale(cache)
+	) {
+		return cache.latest;
+	}
+	const latest = await fetchLatest();
+	if (latest) {
+		writeCache({ checkedAt: now, latest });
+		return latest;
+	}
+	// Network failed — fall back to a stale cache value only if it isn't behind
+	// the installed version. Refresh the timestamp lightly so we don't hammer on
+	// every invocation.
+	if (cache && !cacheIsStale(cache)) {
+		writeCache({ checkedAt: now, latest: cache.latest });
+		return cache.latest;
+	}
+	return null;
 }
 
 export async function getUpdateStatus(): Promise<{
-  current: string;
-  latest: string | null;
-  updateAvailable: boolean;
+	current: string;
+	latest: string | null;
+	updateAvailable: boolean;
 }> {
-  const resolved = await resolveLatest();
-  // Never advertise a `latest` that is behind the installed version: a stale
-  // or garbage cache must not be able to report a version older than current.
-  const latest = resolved && isNewer(VERSION, resolved) ? VERSION : resolved;
-  return {
-    current: VERSION,
-    latest,
-    updateAvailable: latest ? isNewer(latest, VERSION) : false,
-  };
+	const resolved = await resolveLatest();
+	// Never advertise a `latest` that is behind the installed version: a stale
+	// or garbage cache must not be able to report a version older than current.
+	const latest = resolved && isNewer(VERSION, resolved) ? VERSION : resolved;
+	return {
+		current: VERSION,
+		latest,
+		updateAvailable: latest ? isNewer(latest, VERSION) : false,
+	};
 }
 
 /**
@@ -162,29 +166,29 @@ export async function getUpdateStatus(): Promise<{
  * Safe to call from any command; never throws.
  */
 export async function checkForUpdate(): Promise<string | null> {
-  if (disabled()) return null;
-  try {
-    const latest = await resolveLatest();
-    if (latest && isNewer(latest, VERSION)) {
-      return formatNotice(latest);
-    }
-  } catch {
-    /* never surface errors from the update check */
-  }
-  return null;
+	if (disabled()) return null;
+	try {
+		const latest = await resolveLatest();
+		if (latest && isNewer(latest, VERSION)) {
+			return formatNotice(latest);
+		}
+	} catch {
+		/* never surface errors from the update check */
+	}
+	return null;
 }
 
 export function formatNotice(latest: string): string {
-  const dim = "\x1b[2m";
-  const bold = "\x1b[1m";
-  const cyan = "\x1b[36m";
-  const reset = "\x1b[0m";
-  return (
-    `${dim}┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄${reset}\n` +
-    `${bold}Mercury ${latest} is available${reset} ${dim}(you have ${VERSION})${reset}\n` +
-    `Update:  ${cyan}${INSTALL_CMD}${reset}\n` +
-    `${dim}Silence with MERCURY_NO_UPDATE_CHECK=1${reset}`
-  );
+	const dim = "\x1b[2m";
+	const bold = "\x1b[1m";
+	const cyan = "\x1b[36m";
+	const reset = "\x1b[0m";
+	return (
+		`${dim}┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄${reset}\n` +
+		`${bold}Mercury ${latest} is available${reset} ${dim}(you have ${VERSION})${reset}\n` +
+		`Update:  ${cyan}${INSTALL_CMD}${reset}\n` +
+		`${dim}Silence with MERCURY_NO_UPDATE_CHECK=1${reset}`
+	);
 }
 
 /**
@@ -192,6 +196,6 @@ export function formatNotice(latest: string): string {
  * stdout that skills may parse). Awaitable but bounded by FETCH_TIMEOUT_MS.
  */
 export async function maybePrintUpdateNotice(): Promise<void> {
-  const notice = await checkForUpdate();
-  if (notice) console.error("\n" + notice);
+	const notice = await checkForUpdate();
+	if (notice) console.error(`\n${notice}`);
 }

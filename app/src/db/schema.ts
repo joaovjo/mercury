@@ -202,10 +202,10 @@ CREATE INDEX IF NOT EXISTS idx_attempts_company   ON outreach_attempts(company_u
  * portal-filler (issue #7) extends \`applications\` with ATS-fill metadata.
  */
 export const COLUMN_MIGRATIONS: Record<string, Record<string, string>> = {
-  applications: {
-    portal: "TEXT",
-    external_url: "TEXT",
-    fields_filled_json: "TEXT",
-    unfilled_json: "TEXT",
-  },
+	applications: {
+		portal: "TEXT",
+		external_url: "TEXT",
+		fields_filled_json: "TEXT",
+		unfilled_json: "TEXT",
+	},
 };

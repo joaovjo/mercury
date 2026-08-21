@@ -17,4 +17,6 @@ export const VERSION = ${JSON.stringify(version)};
 `;
 
 writeFileSync(outFile, content);
-console.log(`Wrote version ${version} into ${relative(process.cwd(), outFile)}`);
+console.log(
+	`Wrote version ${version} into ${relative(process.cwd(), outFile)}`,
+);

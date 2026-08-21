@@ -1,78 +1,90 @@
-import { $ } from "bun";
-import { join } from "node:path";
 import { tmpdir } from "node:os";
-import type { Flags } from "./flags.ts";
+import { join } from "node:path";
+import { $ } from "bun";
 import { getUpdateStatus } from "../update-check.ts";
+import type { Flags } from "./flags.ts";
 
 const BOOTSTRAP_URL =
-  process.env.MERCURY_BOOTSTRAP_URL ??
-  "https://raw.githubusercontent.com/joaovjo/mercury/main/app/scripts/bootstrap.ts";
+	process.env.MERCURY_BOOTSTRAP_URL ??
+	"https://raw.githubusercontent.com/joaovjo/mercury/main/app/scripts/bootstrap.ts";
 
 export type UpdateEvent =
-  | { type: "line"; stream: "stdout" | "stderr"; text: string }
-  | { type: "done"; code: number };
+	| { type: "line"; stream: "stdout" | "stderr"; text: string }
+	| { type: "done"; code: number };
 
-export async function runUpdate(onEvent?: (event: UpdateEvent) => void): Promise<number> {
-  // Download bootstrap.ts to a temp file, then run with bun
-  const tmpFile = join(tmpdir(), `mercury-update-${Date.now()}.ts`);
-  const dl = await $`curl -fsSL ${BOOTSTRAP_URL} -o ${tmpFile}`.nothrow();
-  if (dl.exitCode !== 0) {
-    onEvent?.({ type: "line", stream: "stderr", text: "Failed to download update script.\n" });
-    onEvent?.({ type: "done", code: 1 });
-    return 1;
-  }
+export async function runUpdate(
+	onEvent?: (event: UpdateEvent) => void,
+): Promise<number> {
+	// Download bootstrap.ts to a temp file, then run with bun
+	const tmpFile = join(tmpdir(), `mercury-update-${Date.now()}.ts`);
+	const dl = await $`curl -fsSL ${BOOTSTRAP_URL} -o ${tmpFile}`.nothrow();
+	if (dl.exitCode !== 0) {
+		onEvent?.({
+			type: "line",
+			stream: "stderr",
+			text: "Failed to download update script.\n",
+		});
+		onEvent?.({ type: "done", code: 1 });
+		return 1;
+	}
 
-  const proc = Bun.spawn(["bun", "run", tmpFile], {
-    stdout: "pipe",
-    stderr: "pipe",
-    env: process.env,
-  });
+	const proc = Bun.spawn(["bun", "run", tmpFile], {
+		stdout: "pipe",
+		stderr: "pipe",
+		env: process.env,
+	});
 
-  await Promise.all([
-    forward(proc.stdout, "stdout", onEvent),
-    forward(proc.stderr, "stderr", onEvent),
-  ]);
+	await Promise.all([
+		forward(proc.stdout, "stdout", onEvent),
+		forward(proc.stderr, "stderr", onEvent),
+	]);
 
-  const code = await proc.exited;
-  await $`rm -f ${tmpFile}`.nothrow();
-  onEvent?.({ type: "done", code });
-  return typeof code === "number" ? code : 1;
+	const code = await proc.exited;
+	await $`rm -f ${tmpFile}`.nothrow();
+	onEvent?.({ type: "done", code });
+	return typeof code === "number" ? code : 1;
 }
 
 export async function updateCmd(flags: Flags = {}): Promise<void> {
-  if (flags.force !== true) {
-    const status = await getUpdateStatus();
-    if (!status.updateAvailable) {
-      // Report the INSTALLED version — not the cached `latest`, which may be
-      // stale and would otherwise advertise a version older than current.
-      console.log(`Mercury is already up to date (${status.current}).`);
-      console.log("Run `mercury update --force` to reinstall the latest release.");
-      return;
-    }
-    console.log(`Updating Mercury ${status.current} → ${status.latest}...`);
-  }
+	if (flags.force !== true) {
+		const status = await getUpdateStatus();
+		if (!status.updateAvailable) {
+			// Report the INSTALLED version — not the cached `latest`, which may be
+			// stale and would otherwise advertise a version older than current.
+			console.log(`Mercury is already up to date (${status.current}).`);
+			console.log(
+				"Run `mercury update --force` to reinstall the latest release.",
+			);
+			return;
+		}
+		console.log(`Updating Mercury ${status.current} → ${status.latest}...`);
+	}
 
-  const code = await runUpdate((event) => {
-    if (event.type === "line") {
-      const out = event.stream === "stderr" ? process.stderr : process.stdout;
-      out.write(event.text);
-    }
-  });
-  if (code !== 0) process.exit(code);
+	const code = await runUpdate((event) => {
+		if (event.type === "line") {
+			const out = event.stream === "stderr" ? process.stderr : process.stdout;
+			out.write(event.text);
+		}
+	});
+	if (code !== 0) process.exit(code);
 }
 
 async function forward(
-  stream: ReadableStream<Uint8Array>,
-  name: "stdout" | "stderr",
-  onEvent?: (event: UpdateEvent) => void,
+	stream: ReadableStream<Uint8Array>,
+	name: "stdout" | "stderr",
+	onEvent?: (event: UpdateEvent) => void,
 ): Promise<void> {
-  const reader = stream.getReader();
-  const decoder = new TextDecoder();
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    onEvent?.({ type: "line", stream: name, text: decoder.decode(value, { stream: true }) });
-  }
-  const rest = decoder.decode();
-  if (rest) onEvent?.({ type: "line", stream: name, text: rest });
+	const reader = stream.getReader();
+	const decoder = new TextDecoder();
+	for (;;) {
+		const { done, value } = await reader.read();
+		if (done) break;
+		onEvent?.({
+			type: "line",
+			stream: name,
+			text: decoder.decode(value, { stream: true }),
+		});
+	}
+	const rest = decoder.decode();
+	if (rest) onEvent?.({ type: "line", stream: name, text: rest });
 }

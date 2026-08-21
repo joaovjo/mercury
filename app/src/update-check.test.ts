@@ -8,7 +8,13 @@
  * backs MERCURY_UPDATE_URL so we control what "the remote" returns.
  */
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -19,11 +25,11 @@ process.env.MERCURY_HOME = HOME;
 let remoteLatest: string | null = null;
 let remoteOk = true;
 const server = Bun.serve({
-  port: 0,
-  fetch() {
-    if (!remoteOk) return new Response("nope", { status: 500 });
-    return Response.json({ tag_name: `v${remoteLatest}` });
-  },
+	port: 0,
+	fetch() {
+		if (!remoteOk) return new Response("nope", { status: 500 });
+		return Response.json({ tag_name: `v${remoteLatest}` });
+	},
 });
 process.env.MERCURY_UPDATE_URL = `http://localhost:${server.port}/`;
 
@@ -40,80 +46,81 @@ const OLDER = `${Math.max(0, maj - 1)}.0.0`;
 const NEWER = `${maj}.${min + 1}.0`;
 
 function writeCache(latest: string, ageMs = 0): void {
-  writeFileSync(
-    paths.updateCache,
-    JSON.stringify({ checkedAt: Date.now() - ageMs, latest }),
-  );
+	writeFileSync(
+		paths.updateCache,
+		JSON.stringify({ checkedAt: Date.now() - ageMs, latest }),
+	);
 }
 
 function clearCache(): void {
-  if (existsSync(paths.updateCache)) rmSync(paths.updateCache);
+	if (existsSync(paths.updateCache)) rmSync(paths.updateCache);
 }
 
 beforeEach(() => {
-  clearCache();
-  remoteOk = true;
-  remoteLatest = null;
+	clearCache();
+	remoteOk = true;
+	remoteLatest = null;
 });
 
 afterAll(() => {
-  server.stop(true);
-  rmSync(HOME, { recursive: true, force: true });
+	server.stop(true);
+	rmSync(HOME, { recursive: true, force: true });
 });
 
 describe("isNewer sanity (older fixture is actually older)", () => {
-  test("OLDER < VERSION < NEWER", () => {
-    expect(isNewer(VERSION, OLDER)).toBe(true);
-    expect(isNewer(NEWER, VERSION)).toBe(true);
-  });
+	test("OLDER < VERSION < NEWER", () => {
+		expect(isNewer(VERSION, OLDER)).toBe(true);
+		expect(isNewer(NEWER, VERSION)).toBe(true);
+	});
 });
 
 describe("issue #13 — stale cache behind installed version", () => {
-  test("fresh cache pinned to an OLD version is ignored; re-fetches real latest", async () => {
-    // Cache claims latest=OLDER, written 'now' so it's within CHECK_INTERVAL.
-    writeCache(OLDER, 0);
-    remoteLatest = NEWER; // remote actually has a newer release
-    const status = await getUpdateStatus();
-    expect(status.current).toBe(VERSION);
-    expect(status.latest).toBe(NEWER);
-    expect(status.updateAvailable).toBe(true);
-  });
+	test("fresh cache pinned to an OLD version is ignored; re-fetches real latest", async () => {
+		// Cache claims latest=OLDER, written 'now' so it's within CHECK_INTERVAL.
+		writeCache(OLDER, 0);
+		remoteLatest = NEWER; // remote actually has a newer release
+		const status = await getUpdateStatus();
+		expect(status.current).toBe(VERSION);
+		expect(status.latest).toBe(NEWER);
+		expect(status.updateAvailable).toBe(true);
+	});
 
-  test("never reports latest older than installed, even if network also fails", async () => {
-    writeCache(OLDER, 0);
-    remoteOk = false; // network down → would normally fall back to stale cache
-    const status = await getUpdateStatus();
-    // Must NOT advertise OLDER. Clamp to current at worst.
-    expect(status.latest).not.toBe(OLDER);
-    expect(status.updateAvailable).toBe(false);
-    if (status.latest !== null) expect(isNewer(VERSION, status.latest)).toBe(false);
-  });
+	test("never reports latest older than installed, even if network also fails", async () => {
+		writeCache(OLDER, 0);
+		remoteOk = false; // network down → would normally fall back to stale cache
+		const status = await getUpdateStatus();
+		// Must NOT advertise OLDER. Clamp to current at worst.
+		expect(status.latest).not.toBe(OLDER);
+		expect(status.updateAvailable).toBe(false);
+		if (status.latest !== null)
+			expect(isNewer(VERSION, status.latest)).toBe(false);
+	});
 
-  test("up-to-date: fresh cache equal to VERSION reports no update", async () => {
-    writeCache(VERSION, 0);
-    const status = await getUpdateStatus();
-    expect(status.latest).toBe(VERSION);
-    expect(status.updateAvailable).toBe(false);
-  });
+	test("up-to-date: fresh cache equal to VERSION reports no update", async () => {
+		writeCache(VERSION, 0);
+		const status = await getUpdateStatus();
+		expect(status.latest).toBe(VERSION);
+		expect(status.updateAvailable).toBe(false);
+	});
 });
 
 describe("normal update path still works", () => {
-  test("genuinely newer remote release is offered", async () => {
-    clearCache();
-    remoteLatest = NEWER;
-    const status = await getUpdateStatus();
-    expect(status.latest).toBe(NEWER);
-    expect(status.updateAvailable).toBe(true);
-    // And it should have written the fresh value to cache.
-    const cached = JSON.parse(readFileSync(paths.updateCache, "utf8"));
-    expect(cached.latest).toBe(NEWER);
-  });
+	test("genuinely newer remote release is offered", async () => {
+		clearCache();
+		remoteLatest = NEWER;
+		const status = await getUpdateStatus();
+		expect(status.latest).toBe(NEWER);
+		expect(status.updateAvailable).toBe(true);
+		// And it should have written the fresh value to cache.
+		const cached = JSON.parse(readFileSync(paths.updateCache, "utf8"));
+		expect(cached.latest).toBe(NEWER);
+	});
 
-  test("fresh, valid cache (>= VERSION) is used without a network hit", async () => {
-    writeCache(NEWER, 0);
-    remoteOk = false; // prove we did NOT need the network
-    const status = await getUpdateStatus();
-    expect(status.latest).toBe(NEWER);
-    expect(status.updateAvailable).toBe(true);
-  });
+	test("fresh, valid cache (>= VERSION) is used without a network hit", async () => {
+		writeCache(NEWER, 0);
+		remoteOk = false; // prove we did NOT need the network
+		const status = await getUpdateStatus();
+		expect(status.latest).toBe(NEWER);
+		expect(status.updateAvailable).toBe(true);
+	});
 });

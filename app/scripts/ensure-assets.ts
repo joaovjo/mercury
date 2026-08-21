@@ -22,8 +22,8 @@ export const EMBEDDED_ASSETS: Record<string, string> = {};
 `;
 
 if (existsSync(outFile)) {
-  // Already present (real bundle or a prior stub) — nothing to do.
-  process.exit(0);
+	// Already present (real bundle or a prior stub) — nothing to do.
+	process.exit(0);
 }
 
 writeFileSync(outFile, STUB);
