@@ -32,7 +32,7 @@ export interface MercuryConfig {
   username?: string;
   displayName?: string;
   /** Default ACP provider id. */
-  provider?: "opencode" | "claude-code";
+  provider?: string;
   /** Optional explicit LinkedIn MCP connection command. */
   linkedinMcpCommand?: string[];
   /** Outreach relationship-memory settings (issue #11). Deep-partial: any
