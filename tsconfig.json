@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    // Environment setup & latest features
     "lib": ["ESNext"],
     "target": "ESNext",
     "module": "Preserve",
@@ -9,22 +8,38 @@
     "allowJs": true,
     "types": ["bun"],
 
-    // Bundler mode
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
 
-    // Best practices
     "strict": true,
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
 
-    // Some stricter flags (disabled by default)
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
-  }
+    "paths": {
+      "@mercury/core": ["./packages/core/src/index.ts"],
+      "@mercury/db": ["./packages/db/src/index.ts"],
+      "@mercury/outreach": ["./packages/outreach/src/index.ts"],
+      "@mercury/recruiter": ["./packages/recruiter/src/index.ts"],
+      "@mercury/ats": ["./packages/ats/src/index.ts"],
+      "@mercury/acp": ["./packages/acp/src/index.ts"],
+      "@mercury/mcp": ["./packages/mcp/src/index.ts"],
+      "@mercury/a2a": ["./packages/a2a/src/index.ts"],
+      "@mercury/server": ["./packages/server/src/index.ts"]
+    }
+  },
+  "include": [
+    "packages/*/src/**/*",
+    "apps/cli/src/**/*",
+    "scripts/**/*"
+  ],
+  "exclude": [
+    "apps/web",
+    "apps/tui",
+    "node_modules",
+    "dist"
+  ]
 }

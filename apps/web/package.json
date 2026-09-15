@@ -1,12 +1,13 @@
 {
-  "name": "web",
+  "name": "@mercury/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "bun --hot src/server.ts",
     "start": "NODE_ENV=production bun src/server.ts",
-    "build": "bun run build.ts"
+    "build": "bun run build.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

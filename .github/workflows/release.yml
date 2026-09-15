@@ -31,26 +31,22 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Pin package.json version to the tag
-        working-directory: app
         run: |
           VERSION="${{ steps.ver.outputs.version }}"
-          # Update the "version" field so version.gen.ts (and the embedded
+          # Update the "version" field so version.ts (and the embedded
           # binary) report exactly what was released.
           tmp="$(mktemp)"
           jq --arg v "$VERSION" '.version = $v' package.json > "$tmp" && mv "$tmp" package.json
           echo "package.json version -> $(jq -r .version package.json)"
 
       - name: Install dependencies
-        working-directory: app
         run: bun install
 
       - name: Build all targets
-        working-directory: app
         run: bun run build:targets
 
       - name: List artifacts
-        working-directory: app/dist
-        run: ls -lh mercury-* SHA256SUMS
+        run: ls -lh dist/mercury-* dist/SHA256SUMS
 
       - name: Extract changelog section
         id: changelog
@@ -78,9 +74,9 @@ jobs:
           body: ${{ steps.changelog.outputs.found == 'true' && steps.changelog.outputs.body || '' }}
           generate_release_notes: ${{ steps.changelog.outputs.found != 'true' }}
           files: |
-            app/dist/mercury-linux-x64
-            app/dist/mercury-linux-arm64
-            app/dist/mercury-darwin-x64
-            app/dist/mercury-darwin-arm64
-            app/dist/mercury-windows-x64.exe
-            app/dist/SHA256SUMS
+            dist/mercury-linux-x64
+            dist/mercury-linux-arm64
+            dist/mercury-darwin-x64
+            dist/mercury-darwin-arm64
+            dist/mercury-windows-x64.exe
+            dist/SHA256SUMS

@@ -1,12 +1,33 @@
 {
   "name": "mercury",
-  "module": "index.ts",
-  "type": "module",
+  "version": "0.9.1",
   "private": true,
-  "devDependencies": {
-    "@types/bun": "latest"
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "catalog": {
+    "typescript": "^7.0.0",
+    "@types/bun": "latest",
+    "@modelcontextprotocol/client": "^2.0.0",
+    "@biomejs/biome": "2.5.9"
   },
-  "peerDependencies": {
-    "typescript": "^7"
+  "scripts": {
+    "dev": "bun run --filter @mercury/cli dev",
+    "dev:web": "bun run --filter @mercury/web dev",
+    "dev:tui": "bun run --filter @mercury/tui dev",
+    "build:web": "cd apps/web && bun install && bun run build",
+    "build": "bun run build:web && bun run embed && bun run build:bin",
+    "build:bin": "bun build apps/cli/src/index.ts --compile --outfile dist/mercury",
+    "embed": "bun run scripts/embed-assets.ts",
+    "build:targets": "bun run build:web && bun run embed && bun run scripts/build-targets.ts",
+    "typecheck": "tsc --noEmit && (cd apps/web && bun run typecheck) && (cd apps/tui && bun run typecheck)",
+    "test": "bun test",
+    "install:bin": "install -m 755 dist/mercury ~/.local/bin/mercury"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
   }
 }

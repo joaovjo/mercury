@@ -356,9 +356,9 @@ async function handleApiRequest(path: string, req: Request): Promise<Response> {
     if (body.key) {
       const idx = mockAnswers.findIndex((a) => a.key === body.key);
       if (idx >= 0) {
-        mockAnswers[idx] = { id: mockAnswers[idx]!.id, key: body.key, value: body.value, category: body.category || mockAnswers[idx]!.category };
+        mockAnswers[idx] = { id: mockAnswers[idx]!.id, key: body.key, value: body.value ?? "", category: body.category || mockAnswers[idx]!.category };
       } else {
-        mockAnswers.push({ id: String(Date.now()), key: body.key, value: body.value, category: body.category || "custom" });
+        mockAnswers.push({ id: String(Date.now()), key: body.key, value: body.value ?? "", category: body.category || "custom" });
       }
       broadcast({ type: "changed", table: "applicant_answers" });
     }

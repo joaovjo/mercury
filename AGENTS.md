@@ -11,9 +11,10 @@ A job-search companion split into two halves:
 1. **Skills** (`skills/*/SKILL.md`) — plain-markdown agent skills loaded by any
    skill-aware assistant (opencode, Claude Code, Cursor, …). They orchestrate the
    LinkedIn MCP + Chrome MCP and persist results through the `mercury` CLI.
-2. **App** (`app/`) — a Bun + TypeScript CLI that is BOTH the dashboard launcher
-   AND the write API the skills call. Ships as a single compiled binary with the
-   React UI embedded.
+2. **App & Packages** (`apps/*`, `packages/*`) — a Bun workspace monorepo providing
+   the CLI (`apps/cli`), React dashboard (`apps/web`), TUI (`apps/tui`), and modular
+   libraries (`@mercury/*` packages). Ships as a single compiled binary (`dist/mercury`)
+   with the React UI embedded.
 
 ## Architecture
 
@@ -22,7 +23,8 @@ skills  ──(agent runs `mercury …` via bash)──▶  ~/.mercury/mercury.d
                                                         ▲
 mercury dashboard ──Bun.serve + WebSocket──────────────┘   (reads + live-updates)
                   ├─ MCP client  → LinkedIn MCP   (hybrid instant search)
-                  └─ ACP client  → opencode / Claude Code   (Launch tab runs skills)
+                  ├─ ACP client  → opencode / Claude Code   (Launch tab runs skills)
+                  └─ A2A agent   → /.well-known/agent.json  (Agent-to-Agent protocol)
 ```
 
 - **One schema, one source of truth.** Every mutation goes through the `mercury`
@@ -38,24 +40,27 @@ mercury dashboard ──Bun.serve + WebSocket───────────�
 ### Key directories
 
 ```
-app/
-├── src/
-│   ├── cli/        # command entry + write subcommands + setup
-│   ├── db/         # schema, connection (bun:sqlite, WAL), change notify
-│   ├── server/     # Bun.serve dashboard, REST/WS, queries, embedded assets
-│   ├── mcp/        # LinkedIn MCP client + hybrid search + invite withdrawal
-│   ├── acp/        # ACP client, provider registry, session manager
-│   ├── outreach/   # outreach relationship-memory engine (state machine, store, budget)
-│   ├── recruiter/  # recruiter sync (accepted-invite detection via 1st-degree search)
-│   ├── match/      # ATS form-label → stored-answer matcher (exact/synonym/fuzzy)
-│   ├── adapters/   # per-ATS field registries (Greenhouse, Lever, Ashby, generic)
-│   └── paths.ts    # ~/.mercury path resolution + config
-├── scripts/
-│   ├── bootstrap.ts  # curl|bun installer/updater (prebuilt binary + source fallback)
-│   └── install.ts    # local dev installer (bun run install:ts)
-└── web/            # React 19 dashboard (Bun build → embedded into the binary)
-                    #   Tailwind v4, shadcn, Phosphor Icons, Recharts, react-intl (en-US + pt-BR)
-skills/             # the agent skills (copied into agent dirs by `mercury setup`)
+apps/
+├── cli/            # @mercury/cli: binary entrypoint, subcommands, setup, TUI runner
+├── web/            # @mercury/web: React 19 dashboard (Tailwind v4, shadcn, Phosphor)
+└── tui/            # @mercury/tui: OpenTUI terminal interface
+
+packages/
+├── core/           # @mercury/core: paths, config, version, update checks
+├── db/             # @mercury/db: schema, SQLite connection (bun:sqlite, WAL), notify
+├── outreach/       # @mercury/outreach: relationship-memory engine, store, budget
+├── recruiter/      # @mercury/recruiter: sync (accepted-invite detection)
+├── ats/            # @mercury/ats: ATS form-label matcher & adapter registries
+├── acp/            # @mercury/acp: ACP client, session manager, provider registry
+├── mcp/            # @mercury/mcp: LinkedIn MCP client, hybrid search, browser cleanup
+├── a2a/            # @mercury/a2a: A2A protocol (Agent Card, JSON-RPC 2.0 task server)
+└── server/         # @mercury/server: Bun.serve dashboard server, WebSocket, REST/A2A
+
+scripts/
+├── embed-assets.ts     # inlines apps/web/dist base64 into packages/server/src/assets.ts
+├── build-targets.ts    # cross-compiles all release targets into dist/
+└── extract-changelog.sh# parses CHANGELOG.md for release notes
+skills/                 # agent skills (copied into agent dirs by `mercury setup`)
 ```
 
 ### The `.mercury/` user data dir
@@ -77,32 +82,30 @@ Per-user job-search state lives at `~/.mercury/` (override with `MERCURY_HOME`):
 Requires [Bun](https://bun.sh).
 
 ```bash
-cd app
-bun install
-bun run dev                 # run the CLI from source: bun run src/cli/index.ts
-bun run typecheck           # tsc --noEmit  (must pass before committing)
-bun run build               # build:web → embed assets → compile single binary
+bun install --linker hoisted
+bun run dev                 # run CLI from source: bun run --filter @mercury/cli dev
+bun run dev:web             # run dashboard dev server
+bun run dev:tui             # run OpenTUI interactive app
+bun run typecheck           # tsc --noEmit (must pass before committing)
+bun test                    # run test suite
+bun run build               # build:web → embed assets → compile single binary (dist/mercury)
 ```
 
 `bun run build` chains:
-1. `build:web` — Bun builds the React app to `app/web/dist`
-2. `embed` — `scripts/embed-assets.ts` inlines `web/dist` as base64 into
-   `src/server/assets.gen.ts` (so the binary is self-contained)
-3. `build:bin` — `bun build --compile` → `app/dist/mercury`
+1. `build:web` — Bun builds the React app to `apps/web/dist`
+2. `embed` — `scripts/embed-assets.ts` inlines `apps/web/dist` as base64 into
+   `packages/server/src/assets.ts` (so the binary is self-contained)
+3. `build:bin` — `bun build apps/cli/src/index.ts --compile` → `dist/mercury`
 
-> **Convention:** `app/src/server/assets.gen.ts` is a **generated, gitignored**
-> artifact (issue #20) — never commit or hand-edit it. `dev`, `typecheck`, `test`,
-> and `build:bin` auto-create an empty stub via `scripts/ensure-assets.ts` if it's
-> missing (a fresh clone needs no web build to type-check or test). The full
-> `build`/`build:targets` overwrite it with the real base64 bundle via `embed`.
-> Only the compiled binary uses the embedded assets; source/dev runs serve the UI
-> from `web/dist` on disk.
+> **Convention:** `packages/server/src/assets.ts` contains an empty stub by default
+> (safe for dev/test runs without a prebuilt web UI). Running `embed` writes the
+> real base64 bundle into it.
 
 ### Installing your local build
 
 ```bash
-install -m 755 app/dist/mercury ~/.local/bin/mercury
-mercury setup --all           # copy skills into every detected agent
+bun run install:bin         # install -m 755 dist/mercury ~/.local/bin/mercury
+mercury setup --all         # copy skills into every detected agent
 ```
 
 ## Conventions
@@ -140,11 +143,10 @@ CI (`.github/workflows/release.yml`) builds and publishes on tag push:
 git tag v0.3.0 && git push origin v0.3.0
 ```
 
-The workflow pins `app/package.json` to the tag, cross-compiles all five targets
-(`linux-x64`, `linux-arm64`, `darwin-x64`, `darwin-arm64`, `windows-x64.exe`) with
-`bun build --compile --target=…`, writes `SHA256SUMS`, and attaches them to a
-GitHub Release. The bootstrap then downloads the prebuilt binary (SHA-verified),
-falling back to a source build if no target matches.
+The workflow pins `package.json` to the tag, cross-compiles all five targets
+(`linux-x64`, `linux-arm64`, `darwin-x64`, `darwin-arm64`, `windows-x64.exe`) via
+`scripts/build-targets.ts`, writes `SHA256SUMS`, and attaches them to a
+GitHub Release.
 
 ### Changelog → release notes
 

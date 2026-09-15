@@ -71,7 +71,8 @@ export function ProfileSection() {
         case "acp-update": {
           if (!scanning) return;
           const u = msg.update?.update;
-          const k = u?.sessionUpdate;
+          if (!u) break;
+          const k = u.sessionUpdate;
           if (k === "tool_call" && (u.title || u.kind)) {
             setScanLog((prev) => [...prev, `🔧 ${u.title ?? u.kind}`]);
           }

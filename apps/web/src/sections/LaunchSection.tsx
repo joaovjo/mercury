@@ -66,7 +66,8 @@ export function LaunchSection() {
           break;
         case "acp-update": {
           const u = msg.update?.update;
-          const k = u?.sessionUpdate;
+          if (!u) break;
+          const k = u.sessionUpdate;
           if (k === "agent_message_chunk" && u.content?.text) {
             pushLog("msg", u.content.text, true);
           } else if (k === "tool_call") {

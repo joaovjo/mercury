@@ -1,5 +1,5 @@
 {
-  "name": "tui",
+  "name": "@mercury/tui",
   "module": "src/index.tsx",
   "type": "module",
   "private": true,
