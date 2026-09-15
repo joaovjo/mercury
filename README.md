@@ -1,11 +1,11 @@
 <p align="center">
-  <img src=".github/assets/banner.png" alt="Mercury" width="640" />
+  <img src=".github/assets/colibri-banner.jpg" alt="Colibri" width="100%" />
 </p>
 
 <p align="center">
-  <strong>Your AI-powered job search companion</strong><br/>
-  <strong>Profile Optimizer • Job Scout • Experience Bank • Resume Tailor • Recruiter Outreach</strong><br/>
-  <sub>Audit and fix your LinkedIn profile, scout roles, tailor your resume, and reach recruiters — with a local dashboard to run it all.</sub>
+  <strong>Colibri — Autonomous AI Job Search Companion & Agent Suite</strong><br/>
+  <strong>Profile Optimizer • Job Scout • Experience Bank • Resume Tailor • Recruiter Outreach • ATS Portal Filler</strong><br/>
+  <sub>Audit and enhance your LinkedIn visibility, scout matching roles, tailor your resume, and connect with recruiters — with a local Web dashboard and interactive TUI.</sub>
 </p>
 
 <p align="center">
@@ -17,295 +17,264 @@
 </p>
 
 <p align="center">
-  <sub>Runs your skills via <strong>opencode</strong> or <strong>Claude Code</strong> over ACP</sub>
+  <sub>Orchestrates autonomous skills via <strong>opencode</strong>, <strong>Claude Code</strong>, or any ACP agent, with native <strong>A2A Protocol</strong> support</sub>
 </p>
 
 <p align="center">
-  <a href="#installation">Installation</a> · <a href="#the-dashboard">Dashboard</a> · <a href="#skills">Skills</a> · <a href=".github/assets/diagram.html">How it works</a>
+  <a href="#quick-start">Quick Start</a> · <a href="#hard-refactor-notice">About the Fork</a> · <a href="#architecture--monorepo">Architecture</a> · <a href="#the-dashboard">Dashboard</a> · <a href="#skills">Skills</a>
 </p>
 
 ---
 
-Mercury is a collection of **AI agent skills** that automate your LinkedIn job search end-to-end, plus a local dashboard to run and track it all. It works with any AI coding assistant that supports skill files (opencode, Cursor, Claude Code, Cline, …) paired with a [LinkedIn MCP Server](https://github.com/joaovjo/linkedin-mcp-server-ts) and Chrome MCP.
+> [!IMPORTANT]
+> ### 🚀 Hard Refactor Notice: Welcome to Colibri
+> **Colibri** is a **hard refactor** built upon the foundations of [Mercury](https://github.com/joaovjo/mercury). While preserving Mercury's original mission of automating end-to-end job searches, **Colibri departs decisively from the original codebase**:
+> - **Monolithic Backend Eliminated**: The legacy `packages/backend` has been completely dissolved and restructured into a clean, modular multi-package Bun monorepo.
+> - **Modular Architecture**: Functionality is decoupled into independent packages: `@mercury/core`, `@mercury/db`, `@mercury/outreach`, `@mercury/recruiter`, `@mercury/ats`, `@mercury/acp`, `@mercury/mcp`, `@mercury/a2a`, and `@mercury/server`.
+> - **A2A Protocol (Agent-to-Agent)**: Implements the open [A2A Protocol](https://a2a-protocol.org/) specification (`/.well-known/agent.json` and JSON-RPC 2.0 task handling) for direct autonomous agent interoperability.
+> - **Terminal UI (TUI)**: Includes a first-class, standalone terminal app built with **OpenTUI** (`mercury tui`), in addition to the embedded React 19 web dashboard.
+> - **Modern Bun & TypeScript 7**: Native hoisted linker (`[install] linker = "hoisted"`), dependency catalogs, and strict TypeScript 7 type safety.
 
-## Quick Start
+---
 
-```bash
-# install (or update) — downloads a prebuilt binary and installs the skills
-# Bash / zsh:
-curl -fsSL https://raw.githubusercontent.com/joaovjo/mercury/main/app/scripts/bootstrap.ts | bun run -
+## The Colibri Ecosystem
 
-# PowerShell 7.x+:
-irm https://raw.githubusercontent.com/joaovjo/mercury/main/app/scripts/bootstrap.ts | bun run -
+<p align="center">
+  <img src=".github/assets/colibri-pipeline.jpg" alt="Colibri Architecture Pipeline" width="100%" />
+</p>
+
+Colibri combines **specialized AI agent skills**, a **local SQLite WAL database**, **multi-agent protocol adapters (ACP + A2A + MCP)**, and **local user interfaces (Web & TUI)** into an integrated command center for your career.
+
 ```
-
-Re-run the **same command any time to update**. See [Installation](#installation) for prebuilt targets, env overrides, and the source-build fallback.
-
-## The Pipeline
-
-```
-                         experience-bank  (periodic, occasional)
+                         experience-bank  (periodic, STAR interviews)
                                 │ read-only achievement pool
                                 ▼
 profile-optimizer → job-scout → resume-tailor → recruiter-outreach
-     fix your         find the      tailor your      reach the
-     profile          roles          resume          recruiters
+     audit &          find matching    tailor resume     connect with
+     optimize         opportunities    & cover letter     recruiters
                                 │
                                 └──→ portal-filler
-                                     autofill the
+                                     map & autofill
                                      ATS application
 ```
 
-## Skills
+---
 
-| Skill | What It Does |
-|---|---|
-| **profile-optimizer** | Audits your LinkedIn profile against recruiter-search signals and fixes gaps (Open to Work, headline, location, skills, languages, projects, About, experience) |
-| **job-scout** | Searches LinkedIn Jobs by company/location/work-type, pulls full details, and presents a prioritized shortlist with fit assessment |
-| **experience-bank** | "Grill me" — periodically interviews you about new achievements and stores them as a tagged, reusable pool in `.mercury/experience/` that resume-tailor draws from. Run occasionally, not per application |
-| **resume-tailor** | Takes your base resume + experience bank + scouted roles and produces role-tailored versions with gap analysis, ATS keyword alignment, and cover letters |
-| **recruiter-outreach** | Finds technical recruiters at target companies, prioritizes by proximity/mutuals, and sends tailored connection requests |
-| **outreach-tracker** | Runs the daily due-action queue (withdraw stale invites, draft follow-ups, detect replies via LinkedIn inbox, close unresponsive contacts) — all behind explicit user consent (never auto-sends) |
-| **portal-filler** | Autofills an external ATS application form (Greenhouse / Lever / Ashby + generic) from your stored answers and tailored resume, then **pauses for you to review and submit** — it never submits for you |
+## Architecture & Monorepo
 
-See [`.github/assets/diagram.html`](.github/assets/diagram.html) for a visual of how the skills work together.
+Colibri is engineered as a clean Bun workspace monorepo:
 
-![How Mercury works](.github/assets/diagram.png)
+```
+.
+├── apps/
+│   ├── cli/             # @mercury/cli: binary entrypoint, subcommands, setup, TUI runner
+│   ├── web/             # @mercury/web: React 19 dashboard (Tailwind v4, shadcn, Phosphor)
+│   └── tui/             # @mercury/tui: interactive OpenTUI terminal interface
+│
+├── packages/
+│   ├── a2a/             # @mercury/a2a: A2A Protocol (Agent Card, JSON-RPC 2.0 task server)
+│   ├── acp/             # @mercury/acp: Agent Client Protocol (provider registry, sessions)
+│   ├── ats/             # @mercury/ats: ATS form-label matcher & adapter registries
+│   ├── core/            # @mercury/core: central paths, config, versioning, update check
+│   ├── db/              # @mercury/db: SQLite connection (bun:sqlite, WAL), schema, notify
+│   ├── mcp/             # @mercury/mcp: LinkedIn MCP client, hybrid search, browser cleanup
+│   ├── outreach/        # @mercury/outreach: relationship-memory engine, store, budget
+│   ├── recruiter/       # @mercury/recruiter: recruiter sync (accepted-invite detection)
+│   └── server/          # @mercury/server: Bun.serve dashboard server, WebSocket, REST/A2A
+│
+├── scripts/
+│   ├── embed-assets.ts  # inlines apps/web/dist into packages/server/src/assets.ts
+│   ├── build-targets.ts # cross-compiles all release targets into dist/
+│   └── extract-changelog.sh # extracts version notes from CHANGELOG.md for CI
+├── skills/              # plain-markdown agent skills (loaded by any skill-aware assistant)
+├── bunfig.toml          # [install] linker = "hoisted"
+└── package.json         # workspace roots + dependency catalogs (typescript ^7.0.0)
+```
+
+- **Single source of truth**: All state mutations route through the CLI subcommands (`recruiter`, `job`, `metric`, `score`, `interview`, `application`, `answer`, `activity`). Skills never manipulate SQLite directly.
+- **Embedded Single Binary**: The React web dashboard is built and inlined into `packages/server/src/assets.ts` at build time, yielding a self-contained release binary in `dist/mercury`.
+
+---
+
+## Quick Start
+
+### Development & Local Build
+
+Colibri requires [Bun](https://bun.sh) (>= 1.3.0).
+
+```bash
+# 1. Clone and install dependencies with hoisted linker
+git clone https://github.com/joaovjo/mercury.git colibri
+cd colibri
+bun install --linker hoisted
+
+# 2. Run the CLI in dev mode
+bun run dev --help
+
+# 3. Launch local interfaces
+bun run dev:web     # React 19 Dashboard (Hot Reload)
+bun run dev:tui     # Interactive OpenTUI Terminal App
+
+# 4. Run verification suites
+bun run typecheck   # Full TypeScript 7 typecheck across all workspaces
+bun test            # Complete unit and integration test suite
+
+# 5. Build self-contained release binary
+bun run build       # build:web -> embed assets -> compile dist/mercury
+./dist/mercury --help
+```
+
+### Installation (Prebuilt Binary)
+
+```bash
+# Bash / zsh:
+curl -fsSL https://raw.githubusercontent.com/joaovjo/mercury/main/scripts/bootstrap.ts | bun run -
+
+# Install local build into path:
+bun run install:bin
+mercury setup --all
+```
+
+---
 
 ## The Dashboard
 
-Mercury ships a local web dashboard — a central hub for your whole job search.
-Run one command and it opens in your browser:
+Run one command to open the local hub in your browser:
 
 ```bash
 mercury dashboard
 ```
 
-What it gives you:
+Or launch the interactive terminal interface:
 
-- **Overview** — profile score, recruiters contacted/accepted/replied, interviews, jobs
-- **Profile** — recruiter-search metrics charted over time (views, search appearances, connections)
-- **Search** — instant LinkedIn job/people search (hybrid: raw results via the LinkedIn MCP)
-- **Launch** — run any Mercury skill through your agent (**opencode** or **Claude Code**) over [ACP](https://agentclientprotocol.com), with a live agent activity stream
-- **Recruiters** — kanban pipeline (pending → accepted → replied → interviewing → closed), with one-click **Sync** to detect accepted invites
-- **Outreach** — lifecycle funnel (queued → invited → accepted → engaged), due-action queue (withdraw / follow-up / close), per-company blocked counts, and InMail credit budget
-- **Jobs / Applications / Interviews / Answers / Activity** — everything tracked
+```bash
+mercury tui
+```
 
-|  |  |
-|:---:|:---:|
+The web dashboard is served directly by `packages/server` with the UI embedded. It binds to `127.0.0.1` on an auto-assigned port with a secure random token, updates live over WebSockets, and stores state in `~/.mercury/mercury.db`.
+
+| Overview | Recruiters Pipeline |
+| :---: | :---: |
 | ![Overview](.github/assets/dashboard/overview.png) | ![Recruiters](.github/assets/dashboard/recruiters.png) |
-| **Overview** — pipeline health at a glance | **Recruiters** — kanban pipeline + one-click **Sync** to detect accepted invites |
-| ![Launch](.github/assets/dashboard/launch.png) | ![Profile](.github/assets/dashboard/profile.png) |
-| **Launch** — run any skill through your agent, with an optional free-text nudge | **Profile** — recruiter-search visibility charted over time |
+| **Overview** — pipeline score, active contacts, jobs, and metrics | **Recruiters** — kanban pipeline with one-click acceptance sync |
+| **Candidate Answers Store** | **Agent Launch & Streaming** |
+| ![Answers](.github/assets/dashboard/answers.png) | ![Launch](.github/assets/dashboard/launch.png) |
+| **Answers** — reusable ATS answers grouped by category | **Launch** — ACP agent runner with live streaming output |
 
-> Screenshots use synthetic demo data.
+---
 
-The dashboard is a single Bun-compiled binary with the UI embedded (React 19 +
-Tailwind v4 + shadcn). It binds to `127.0.0.1` on a random port with a URL token,
-stores everything in a local SQLite database at `~/.mercury/mercury.db`, and
-supports English and Brazilian Portuguese (selectable in the UI).
+## Skills Suite
 
-The `mercury` CLI is both the dashboard launcher **and** the write API the skills
-call (`mercury recruiter add`, `mercury job save`, …) — one schema, one source of truth.
+Colibri bundles 7 AI agent skills ready to load into opencode, Claude Code, Cursor, or Codex:
 
-## The `.mercury/` Directory
+| Skill | Description |
+|---|---|
+| **profile-optimizer** | Audits your LinkedIn profile against recruiter search signals and guides updates (Open to Work, headline, skills, about, experience). |
+| **job-scout** | Searches LinkedIn Jobs by company, location, work-type, and comp; pulls full descriptions and produces a prioritized shortlist with fit assessment. |
+| **experience-bank** | *"Grill me"* — Conducts structured STAR-style interviews to capture impact, metrics, and tech stack into tagged achievement files in `.mercury/experience/`. |
+| **resume-tailor** | Merges your canonical base resume + experience bank + scouted roles to produce role-tailored versions with ATS keyword alignment and cover letters. |
+| **recruiter-outreach** | Finds relevant technical recruiters/sourcers at target companies, prioritizes by network proximity, and drafts tailored connection notes. |
+| **outreach-tracker** | Drives the outreach cadence queue (withdraw stale invites, prompt follow-ups, record replies, respect cooldown periods). |
+| **portal-filler** | Detects ATS platforms (Greenhouse, Lever, Ashby, Generic), maps fields to your stored answers, uploads your tailored resume, and pauses for human review before submission. |
 
-Mercury stores all job search state in `~/.mercury/` (override with `MERCURY_HOME`):
+### Installing Skills into Your Agent
+
+```bash
+mercury setup                    # all detected agents
+mercury setup --agent opencode   # specific agent
+mercury setup --all              # include non-detected agents
+```
+
+---
+
+## What Colibri Does
+
+### 🎯 Profile Optimization
+- Pulls search appearance trends, profile views, and connection counts.
+- Flags recruiter-search anti-patterns (e.g. internal mobility badges signaling "not looking").
+- Streamlines profile updates via Chrome MCP automation.
+
+### 🔍 Precision Job Scouting
+- Queries LinkedIn jobs with structured filters (seniority, remote/hybrid, keywords).
+- Evaluates fit (Strong / Good / Stretch) against your experience bank.
+- Identifies ATS application friction points and salary ranges upfront.
+
+### 🧠 Experience Bank ("Grill Me")
+- Incremental, non-repetitive achievement extraction.
+- Stores evidence-backed achievements tagged by role, tech, and quantifiable metrics.
+- Enforces truth in resume tailoring — never invents claims.
+
+### 📄 Role-Tailored Resumes
+- Compiles ATS-optimized Typst and Markdown resumes tailored to specific opportunities.
+- Generates aligned cover letters with custom gap analysis.
+- Stores generated artifacts in `~/.mercury/tailored/` and `~/.mercury/cover-letters/`.
+
+### 🤝 Recruiter Relationship Engine
+- Identifies technical recruiters by company URN, mutual connections, and geographic fit.
+- Enforces InMail budgeting, reserve floors, and withdrawal of stale invitations.
+- Automatically syncs 1st-degree connection acceptances via `mercury recruiter sync`.
+
+### 📝 Smart ATS Form Auto-Fill (`portal-filler`)
+- Detects the target ATS portal from the application URL:
+  ```bash
+  mercury detect-portal --url "https://boards.greenhouse.io/acme/jobs/1234"
+  ```
+- Matches form labels against stored answers:
+  ```bash
+  mercury match --labels '["Email *", "First Name", "LinkedIn Profile"]'
+  ```
+- Manages reusable answers via CLI or Dashboard:
+  ```bash
+  mercury answer set --key "github_url" --value "https://github.com/..." --category "links"
+  mercury answer list
+  ```
+- **Fill-then-pause safety**: Never auto-submits. You retain full control to review the populated fields before submitting.
+
+---
+
+## The `~/.mercury/` State Directory
+
+All personal career data resides in your user home directory (override via `MERCURY_HOME`):
 
 ```
 ~/.mercury/
-├── mercury.db                  # SQLite (WAL): recruiters, jobs, metrics, outreach, …
-├── config.json                 # Provider + preferences (outreach thresholds, InMail budget, …)
-├── dashboard.lock              # {port, token, pid} of a running dashboard
-├── update-check.json           # Cached release-check result
-├── base/
-│   └── resume.typ              # Your canonical base resume
-├── experience/
-│   ├── {slug}.md               # One tagged achievement per entry (experience-bank)
-│   └── index.md                # Rollup for quick scanning
-├── tailored/
-│   ├── airbnb-4393940374.typ   # Tailored per role (company-jobId)
-│   ├── doordash-3969556398.typ
-│   └── uber-4380982336.typ
-├── cover-letters/
-│   ├── airbnb-4393940374.md    # Full cover letter per role
-│   └── ...
-├── reports/
-│   ├── airbnb-4393940374.md    # Gap/match analysis per role
-│   └── ...
-└── logs/
-    ├── 2026-06-26T14:30:00.md  # Run history, diffs, keyword scores
-    └── ...
+├── mercury.db            # SQLite database (WAL mode): recruiters, jobs, metrics, interviews, ...
+├── config.json           # User configuration (provider, outreach parameters, InMail limits)
+├── dashboard.lock        # {port, token, pid} of the running dashboard server
+├── update-check.json     # Cached update status
+├── base/                 # Canonical base resume (resume.typ)
+├── experience/           # Tagged achievement files from experience-bank
+├── tailored/             # Tailored resumes per role (company-jobId.typ)
+├── cover-letters/        # Generated cover letters
+├── reports/              # Match/gap analysis reports
+└── logs/                 # Run history and audit trails
 ```
 
-Everything is tracked — you get full traceability of every tailoring run, outreach wave, and profile change.
+> **Privacy Guarantee**: All personal outreach data, candidate answers, and recruiter interactions remain strictly local inside `~/.mercury/`. No telemetry, no cloud relays, no PII committed to source control.
 
-## Requirements
+---
 
-### MCP Servers
+## Agent Protocols: A2A, ACP & MCP
 
-1. **[LinkedIn MCP Server](https://github.com/joaovjo/linkedin-mcp-server-ts)** — Profile reading, job search, people search, connection requests
-2. **Chrome MCP** — For profile edits that LinkedIn doesn't expose via API (browser automation)
+Colibri bridges three modern agent standards:
+1. **[A2A Protocol](https://a2a-protocol.org/)**: Exposes an Agent Card at `/.well-known/agent.json` and JSON-RPC 2.0 task endpoints for autonomous agent-to-agent task delegation.
+2. **[Agent Client Protocol (ACP)](https://agentclientprotocol.com/)**: Enables the dashboard's Launch tab to drive local coding assistants (such as `opencode` or `claude-code`) directly with live event streaming.
+3. **[Model Context Protocol (MCP)](https://modelcontextprotocol.io/)**: Connects to the [LinkedIn MCP Server](https://github.com/joaovjo/linkedin-mcp-server-ts) and Chrome MCP for seamless browser interactions.
 
-> **Windows gotcha (LinkedIn MCP login):** don't run the LinkedIn MCP login/setup
-> (`bunx linkedin-mcp-server-ts@latest --login`) from an **Administrator/elevated**
-> terminal. It creates `%USERPROFILE%\.linkedin-mcp\{profile,trace-runs}\` with
-> admin-only ACLs; your agent then runs the MCP at normal integrity, can't write
-> `trace-runs\`, and it crashes on startup (`PermissionError: [WinError 5] Access
-> is denied`, shows as **failed** in `/mcp`). Run the login from a **normal**
-> terminal. If you already hit it, fix the ACLs (preserves cookies/login — no
-> re-login needed) from an elevated PowerShell:
->
-> ```powershell
-> takeown /F "$env:USERPROFILE\.linkedin-mcp" /R /D Y
-> icacls  "$env:USERPROFILE\.linkedin-mcp" /reset /T /C /Q
-> ```
->
-> _Thanks to [@juanASP](https://github.com/juanASP) for confirming this on Win11._
+---
 
-### Browser Setup
+## Contributing & Development
 
-Chrome MCP auto-starts a Chrome session on its first tool call — no manual
-`--remote-debugging-port` launch flags required. Just make sure you're logged
-into LinkedIn in that session.
-
-> **Tip:** For multi-step edit flows the skills use Chrome MCP's `pipeline`
-> tool (navigate → snapshot → click/fill in one call), which is faster and more
-> reliable than individual round-trips.
-
-## Installation
+We welcome contributions! Please review [AGENTS.md](AGENTS.md) for architectural guidelines, coding conventions, and test rules.
 
 ```bash
-# Bash / zsh:
-curl -fsSL https://raw.githubusercontent.com/joaovjo/mercury/main/app/scripts/bootstrap.ts | bun run -
-
-# PowerShell 7.x+:
-irm https://raw.githubusercontent.com/joaovjo/mercury/main/app/scripts/bootstrap.ts | bun run -
+bun run typecheck   # must pass with 0 errors
+bun test            # all test suites must pass
+bun run build       # validates packaging and compiled binary output
 ```
 
-The one-liner installs (or updates) Mercury and copies the skills:
-
-- detects your OS/arch and **downloads a prebuilt binary** from the latest [GitHub Release](https://github.com/joaovjo/mercury/releases) (SHA256-verified) → `~/.local/bin/mercury` — no build, just `curl`;
-- copies the skills into detected agent dirs (`~/.config/opencode/skills`, `~/.claude/skills`);
-- **falls back to a source build** with [Bun](https://bun.sh) if no prebuilt binary matches your platform.
-
-Prebuilt targets: `linux-x64`, `linux-arm64`, `darwin-x64`, `darwin-arm64`, `windows-x64`.
-
-> **Windows:** run the one-liner from **Git Bash** (or WSL) — it installs
-> `mercury.exe`. There's no `windows-arm64` prebuilt (Bun doesn't compile it);
-> on Windows-arm64 the installer falls back to a source build with Bun.
-
-> Make sure `~/.local/bin` is on your `PATH` (the installer prints a hint if not).
-> Re-run the same command any time to update — `mercury` also prints a one-line
-> notice when a newer release is available.
-
-**Env overrides:** `MERCURY_VERSION` (pin a tag, e.g. `v0.2.0`), `MERCURY_FROM_SOURCE=1`,
-`MERCURY_BIN_DIR`, `MERCURY_SKILLS_DIR`, `MERCURY_NO_SKILLS=1`, `MERCURY_NO_UPDATE_CHECK=1`.
-
-### Installing the skills (`mercury setup`)
-
-The bootstrap copies skills for you. To (re)install them into your agents at any
-time — e.g. after adding a new agent:
-
-```bash
-mercury setup                 # every detected agent (opencode, Claude Code, Cursor, Codex, …)
-mercury setup --agent opencode   # just one
-mercury setup --all              # include agents that aren't detected yet
-mercury setup --skills-dir <path># an explicit directory
-```
-
-For the **Launch** tab you also need an ACP-capable agent on PATH: `opencode`
-(native `opencode acp`) or `claude` (Claude Code, via `@zed-industries/claude-code-acp`).
-
-> Contributing or running from a clone? See [AGENTS.md](AGENTS.md) for the build
-> and dev workflow.
-
-## Usage
-
-The agent loads these skills automatically when your request matches their description. Examples:
-
-- _"Audit my LinkedIn profile and help me get more recruiter messages"_ → loads `profile-optimizer`
-- _"Find backend engineer roles at DoorDash and Airbnb in São Paulo"_ → loads `job-scout`
-- _"Tailor my resume for these 3 roles I scouted"_ → loads `resume-tailor`
-- _"Find recruiters at Uber who hire in Brazil and connect with them"_ → loads `recruiter-outreach`
-- _"Fill out this Greenhouse application for me"_ (with a job URL) → loads `portal-filler`
-
-## What Mercury Can Do
-
-### Profile Optimizer
-
-- Pull full profile analytics (search appearances, views, impressions)
-- Identify specific pitfalls ranked by recruiter-search impact
-- Edit via browser automation: Open to Work (recruiter-only), headline, location, top skills, languages, projects, About section, experience descriptions
-- Remove internal-mobility cards that signal "not looking"
-
-### Job Scout
-
-- Search by company + location + work type + seniority
-- Get full job descriptions with requirements and compensation
-- Assess fit (Strong / Good / Stretch) based on your profile
-- Flag diversity-scoped roles, staffing aggregators, and external ATS friction
-
-### Experience Bank
-
-- "Grill me" — STAR-style interview that probes for impact, metrics, scope, and tech
-- Seeds from your existing bank + base resume + LinkedIn profile, so it only asks about gaps and new material
-- Stores tagged entries in `.mercury/experience/` (skills, tech, domain, role-type, metrics)
-- Incremental + idempotent — run periodically (quarterly/after shipping), never re-grills what it already has
-- Truthful by construction — structures real stories, never invents
-
-### Resume Tailor
-
-- Parse your base resume (Typst/MD/PDF/txt) + experience bank + LinkedIn profile data
-- Pulls role-relevant experience-bank entries even when they aren't on the short base resume
-- Batch-tailor to N scouted roles in one pass
-- Produce ATS-keyword-aligned Typst output per role
-- Generate full cover letters per role
-- Gap/match analysis showing what's strong, what's a stretch, what's in your bank, what's missing
-- All outputs stored in `.mercury/` with full run logs
-
-### Recruiter Outreach
-
-- Look up company URN IDs (required for LinkedIn's people search filter)
-- Find technical recruiters/sourcers at target companies in your region
-- Prioritize by: same city > 2nd-degree > mutual connections > relevant title
-- Send connection requests with short, specific notes (<300 chars)
-- Provide follow-up templates for post-acceptance
-
-### Portal Filler
-
-- Detects the ATS from the job URL (`mercury detect-portal`) and loads its known field selectors — Greenhouse, Lever, Ashby, or a generic snapshot-driven fallback
-- Fills your contact / eligibility / links from a reusable answer store (`mercury answer set`), maps the rest of the form's labels with `mercury match`, and uploads your compiled resume PDF (`mercury export`)
-- **Pauses for human review and never clicks Submit** — you verify the open browser and submit yourself (mirrors `recruiter-outreach`'s confirm step)
-- **Never auto-fills EEO/demographic fields**, and surfaces anything it couldn't confidently map instead of guessing
-- Edit your stored answers and watch application status (`draft → filled → submitted`) in the dashboard's **Answers** and **Applications** tabs
-
-#### Application CLI (used by `portal-filler`)
-
-```
-mercury answer set --key phone --value "+1 555 ..." --category contact
-mercury answer list
-mercury detect-portal --url "https://job-boards.greenhouse.io/acme/jobs/123"
-mercury match --labels '["Email *","Phone","LinkedIn Profile"]'
-mercury export --typ resume.typ --out resume.pdf
-mercury application update --id 1 --status filled --portal greenhouse --unfilled '["work_authorization"]'
-```
-
-## Known Quirks & Limitations
-
-- **Auto-apply is fill-then-pause, not fully autonomous** — `portal-filler` fills external ATS forms (Greenhouse/Lever/Ashby) but stops before Submit so you review and send. Workday, Taleo, and iCIMS (multi-step, iframe-heavy, account-gated) and opt-in auto-submit are not yet supported; CAPTCHA/SSO are left to the human.
-- **LinkedIn MCP stale browsers (Windows)** — the LinkedIn MCP can leave orphaned headless Chromium processes that lock the profile directory. Run `mercury linkedin reset` to sweep them (skills do this automatically as a preflight). See the [Windows gotcha](#mcp-servers) above for ACL fixes.
-- **LinkedIn rate limits** — don't send >10-15 connection requests per session
-- **Top Skills** are managed inside the About editor (`/add-edit/SUMMARY/`), not the Skills detail page
-- **Company URN IDs** are required for people search filters — plain names are silently ignored
-- **Typeahead fields** (language, skills) require ArrowDown + Enter after typing
-- **"Notify network" toggle** — always verify it's OFF before saving experience edits
-- **Self-update** — run `mercury update` (or re-run the bootstrap one-liner) to update to the latest release in-place
-
-## Keywords
-
-LinkedIn automation, job search AI, recruiter outreach, resume tailoring, profile optimization, experience bank, achievement tracking, ATS optimization, LinkedIn MCP, AI job hunting, career toolkit, LinkedIn bot, job scout, cover letter generator, LinkedIn skills for AI agents
+---
 
 ## License
 
-The Unlicense — public domain. Do whatever you want with it.
+The Unlicense — public domain. Free for personal, academic, and commercial use.
