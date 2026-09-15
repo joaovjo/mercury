@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "bun-mcp": {
+      "serverUrl": "https://bun.com/docs/mcp"
+    }
+  }
+}
