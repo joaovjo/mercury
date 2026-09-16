@@ -49,6 +49,7 @@ export type WSData = { token: string };
 
 export interface ServerOptions {
 	port?: number;
+	token?: string;
 	noOpen?: boolean;
 	workspace?: string;
 }
@@ -62,7 +63,7 @@ export async function startDashboardServer(options: ServerOptions = {}): Promise
 	db(); // ensure schema
 
 	const port = options.port ?? 0; // 0 = OS-assigned
-	const token = crypto.randomUUID();
+	const token = options.token ?? crypto.randomUUID();
 	const noOpen = options.noOpen === true;
 	const root = webDir();
 

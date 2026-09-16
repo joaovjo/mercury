@@ -95,9 +95,10 @@ async function main() {
 			const notice = await updatePromise;
 			if (notice) console.error(`\n${notice}\n`);
 			const port = flags.port ? Number(flags.port) : undefined;
+			const token = flags.token ? String(flags.token) : undefined;
 			const noOpen = flags["no-open"] === true;
 			const workspace = flags.cwd ? String(flags.cwd) : flags.workspace ? String(flags.workspace) : undefined;
-			await startDashboardServer({ port, noOpen, workspace });
+			await startDashboardServer({ port, token, noOpen, workspace });
 			return;
 		}
 		case "tui": {
